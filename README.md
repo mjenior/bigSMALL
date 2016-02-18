@@ -15,13 +15,13 @@ Examples of input files for each program can be found in the examples directory
 
 # Index:
 
-*Section 1:*  Generating bipartite metabolic models used in conjunction with transcriptomics
+**Section 1:**  Generating bipartite metabolic models used in conjunction with transcriptomics
 
-*Section 2:*  Generating SCC networks of compounds only to derive source and sink lists
+**Section 2:**  Generating SCC networks of compounds only to derive source and sink lists
 
-*Section 3:*  Comparing source and sink compounds to infer ecological interaction
+**Section 3:**  Comparing source and sink compounds to infer ecological interaction
 
-*Section 4:*  Appendix describing example files for each script
+**Section 4:**  Appendix describing example files for each script
 
 ---------------------------------------------------------------------------
 
@@ -32,11 +32,11 @@ Calculates relative importance of a given metabolite based on the expression of 
 python bipartite_graph.py ko_expression.list
 
 # Additional Options:
-*Positional, required argument:*
+*Positional, required argument:**
 
 input_file
 
-*Optional arguments:*
+**Optional arguments:**
 
 -h, --help		show this help message and exit
 
@@ -58,11 +58,11 @@ SCC algorithm from Borenstein E. et al. (2008). Large-scale reconstruction and p
 python scc_graph.py ko.list
 
 # Additional Options:
-*Positional, required argument:*
+**Positional, required argument:**
 
 input_file
 
-*Optional arguments:*
+**Optional arguments:**
 
 -h, --help	show this help message and exit
 
@@ -85,13 +85,13 @@ interaction in the human microbiome elucidates community-level assembly rules.
 python interact_scc.py --seedfiles1 organism_1.seedfiles --seedfiles2 organism_2.seedfiles
 
 # Additional Options:
-*Required arguments:*
+**Required arguments:**
 
 --seedfiles1 SEEDFILES1		 Directory of SCC network output for first (meta)organism
 
 --seedfiles2 SEEDFILES2		Directory of SCC network output for second (meta)organism
 
-*Optional arguments:*
+**Optional arguments:**
 
 -h, --help		show this help message and exit
 
@@ -109,6 +109,6 @@ python interact_scc.py --seedfiles1 organism_1.seedfiles --seedfiles2 organism_2
 
 Sample files to be used for practice with each of the respective scripts
 
-ko_expression.list - list of KO codes and corresponding expression values for Clostridium difficile strain 630
-ko.list - list of KEGG gene codes and corresponding KO codes for the genome of Clostridium difficile strain 630
-organism_1.seedfiles and organism_2.seedfiles - Output of calc_seeds.py for Clostridium difficile 630 and Eubacterium rectale ATCC 33656
+ko_expression.list - list of KO codes and corresponding expression values for Clostridium difficile strain 630   
+ko.list - list of KEGG gene codes and corresponding KO codes for the genome of Clostridium difficile strain 630   
+organism_1.seedfiles and organism_2.seedfiles - Output of calc_seeds.py for Clostridium difficile 630 and Eubacterium rectale ATCC 33656   
