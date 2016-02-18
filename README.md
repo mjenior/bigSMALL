@@ -84,14 +84,14 @@ Interaction metrics from Levy R., & Borenstein E. (2013). Metabolic modeling of 
 interaction in the human microbiome elucidates community-level assembly rules.
 
 # Basic usage:
-python interact_scc.py --seedfiles1 organism_1.seedfiles --seedfiles2 organism_2.seedfiles
+python interact_scc.py --sccfiles1 organism_1.scc.files --sccfiles2 organism_2.scc.files
 
 # Additional Options:
 **Required arguments:**
 
---seedfiles1 SEEDFILES1		 Directory of SCC network output for first (meta)organism
+--sccfiles1 SCCFILES1		 Directory of SCC network output for first (meta)organism
 
---seedfiles2 SEEDFILES2		Directory of SCC network output for second (meta)organism
+--sccfiles2 SCCFILES2		Directory of SCC network output for second (meta)organism
 
 **Optional arguments:**
 
