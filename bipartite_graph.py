@@ -251,7 +251,7 @@ def calc_scores(compound_list, input_score_dict, output_score_dict, composite_sc
 		else:
 			final_score = float(sum(input_scores) / outdegree)
 			if indegree == 0:
-				final_score = final_score ^ (1 + outdegree)
+				final_score = final_score * (1 + outdegree) * outdegree
 		if final_score >= min_score:
 			inputscore_list.append([compound, index, str(final_score)])
 		
@@ -265,7 +265,7 @@ def calc_scores(compound_list, input_score_dict, output_score_dict, composite_sc
 		else:
 			final_score = float(sum(input_scores) / indegree)
 			if outdegree == 0:
-				final_score = final_score ^ (1 + indegree)
+				final_score = final_score * (1 + indegree) * indegree
 		if final_score >= min_score:
 			outputscore_list.append([compound, index, str(final_score)])
 
