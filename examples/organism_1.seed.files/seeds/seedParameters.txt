@@ -1,0 +1,31 @@
+Seed Calculation Parameters
+
+Input Graph Name: network.organism_1
+Only Giant Component: False
+Minimum Component Size: 5
+Seed Threshold: 0.2
+
+-------------------------------------
+
+Translation Results
+
+Reactions attempted during KO translation: 1605
+Reactions excluded during KO translation: 1002
+Reactions included during KO translation: 603
+
+Compound combinations attempted during reaction translation: 1147
+Compound combinations excluded during reaction translation: 55
+Compound combinations included during reaction translation: 1092
+
+-------------------------------------
+
+Output Information
+
+Total Nodes: 758
+Total Pruned Nodes: 192
+Total Seeds: 47
+Total Seed Groups: 41
+Total Non-seeds: 519
+Total Sinks: 49
+Total Sink Groups: 42
+Total Non-sinks: 517
