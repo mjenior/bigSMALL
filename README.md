@@ -111,6 +111,21 @@ python interact_scc.py --seedfiles1 organism_1.seedfiles --seedfiles2 organism_2
 
 Under construction
 
+# Basic usage:
+python interact_bipartite.py 
+
+# Additional Options:
+**Required arguments:**
+
+
+**Optional arguments:**
+
+-h, --help		show this help message and exit
+
+--name1 NAME1		Name of first (meta)organism
+
+--name2 NAME2		Name of second (meta)organism
+
 
 ---------------------------------------------------------------------------
 
