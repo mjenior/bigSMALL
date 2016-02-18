@@ -21,7 +21,9 @@ Examples of input files for each program can be found in the examples directory
 
 **Section 3:**  Comparing source and sink compounds to infer ecological interaction
 
-**Section 4:**  Appendix describing example files for each script
+**Section 4:**  Comparing bipartite metabolic model importance values between species
+
+**Section 5:**  Appendix describing example files for each script
 
 ---------------------------------------------------------------------------
 
@@ -34,7 +36,7 @@ python bipartite_graph.py ko_expression.list
 # Additional Options:
 *Positional, required argument:**
 
-input_file
+ko_expression.list
 
 **Optional arguments:**
 
@@ -60,7 +62,7 @@ python scc_graph.py ko.list
 # Additional Options:
 **Positional, required argument:**
 
-input_file
+ko.list
 
 **Optional arguments:**
 
@@ -103,12 +105,21 @@ python interact_scc.py --seedfiles1 organism_1.seedfiles --seedfiles2 organism_2
 
 --quiet QUIET		Turns on verbose output mode
 
-#----------------------------------------------------------------------------------------------------------#
+---------------------------------------------------------------------------
 
-# Section 4 - Appendix
+# Section 4 - interact_bipartite.py
+
+Under construction
+
+
+---------------------------------------------------------------------------
+
+# Section 5 - Appendix
 
 Sample files to be used for practice with each of the respective scripts
 
 ko_expression.list - list of KO codes and corresponding expression values for Clostridium difficile strain 630   
 ko.list - list of KEGG gene codes and corresponding KO codes for the genome of Clostridium difficile strain 630   
 organism_1.seedfiles and organism_2.seedfiles - Output of calc_seeds.py for Clostridium difficile 630 and Eubacterium rectale ATCC 33656   
+
+Need to generate example files for bipartite interaction
