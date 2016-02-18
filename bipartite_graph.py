@@ -314,7 +314,7 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 	probability = 1.0 / gene_count
 	
 	distribution = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
-	distribution = [i for i in distribution if i <= seq_max] # screen for transcript mapping greater than largest value actually sequenced
+	distribution = [i for i in distribution if i < seq_max] # screen for transcript mapping greater than largest value actually sequenced
 
 	input_dist_dict = {}
 	output_dist_dict = {}
