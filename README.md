@@ -1,3 +1,5 @@
+BiGSMAll
+============
 
 # BiGSMAll(BacterIal Genome-Scale Metabolic models for AppLied reverse ecoLogy)
 # Python scripts and workflow by Matthew Jenior, University of Michigan, 2014 - 2016
@@ -28,7 +30,7 @@ python bipartite_graph.py ko_expression.list
 
 # Additional Options:
 usage: bipartite_graph.py [-h] [--name NAME] [--min MIN] [--degree DEGREE]
-                          [--iters ITERS] [--tplgy TPLGY]
+                          [--iters ITERS]
                           input_file
 
 Generate bipartite metabolic models and calculates importance of substrate nodes
@@ -44,8 +46,6 @@ optional arguments:
   --min MIN        minimum importance value to report
   --degree DEGREE  minimum degree value to report
   --iters ITERS    iterations for random distribution subsampling
-  --tplgy TPLGY    calculate compound importance relative to network topology
-                   (0 = No, 1 = Yes)
   
 #----------------------------------------------------------------------------------------------------------#
 
