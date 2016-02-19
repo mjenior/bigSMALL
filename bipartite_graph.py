@@ -58,7 +58,7 @@ start = time.time()
 
 # Define arguments
 parser = argparse.ArgumentParser(description='Generate bipartite metabolic models and calculates importance of substrate nodes based on gene expression.')
-parser.add_argument('input_file')
+parser.add_argument('expression_file')
 parser.add_argument('--name', default='organism', help='Organism or other name for KO+expression file (default is organism)')
 parser.add_argument('--min', default=0, help='minimum importance value to report')
 parser.add_argument('--degree', default=0, help='minimum degree value to report')
@@ -66,7 +66,7 @@ parser.add_argument('--iters', default=1, help='iterations for random distributi
 args = parser.parse_args()
 
 # Assign variables
-KO_input_file = str(args.input_file)
+KO_input_file = str(args.expression_file)
 file_name = str(args.name)
 min_importance = int(args.min)
 min_degree = int(args.degree)
@@ -248,10 +248,10 @@ def calc_scores(compound_list, input_score_dict, output_score_dict, composite_sc
 			input_scores = [0]
 		if outdegree == 0:
 			final_score = 0
+		elif indegree == 0:
+			final_score = float(sum(input_scores) * (1 + outdegree))
 		else:
-			final_score = float(sum(input_scores) / outdegree)
-			if indegree == 0:
-				final_score = final_score * (1 + outdegree) * outdegree
+			final_score = float(sum(input_scores) / outdegree)				
 		if final_score >= min_score:
 			inputscore_list.append([compound, index, str(final_score)])
 		
@@ -262,10 +262,10 @@ def calc_scores(compound_list, input_score_dict, output_score_dict, composite_sc
 			output_scores = [0]
 		if indegree == 0:
 			final_score = 0
+		elif outdegree == 0:
+			final_score = float(sum(output_scores) * (1 + indegree))
 		else:
-			final_score = float(sum(input_scores) / indegree)
-			if outdegree == 0:
-				final_score = final_score * (1 + indegree) * indegree
+			final_score = float(sum(output_scores) / indegree)	
 		if final_score >= min_score:
 			outputscore_list.append([compound, index, str(final_score)])
 
@@ -395,7 +395,7 @@ def network_dictionaries(network, score_dictionary):
 
 	for edge_info in network:
 	
-		# Output, 'K' is useful because it is at the beginning of every KO code
+		# Output, 'C' is useful because it is at the beginning of every compound code
 		if edge_info[1][0] == 'C':
 		
 			# Fill output score dictionary
@@ -459,7 +459,7 @@ def network_dictionaries(network, score_dictionary):
 				outdegree_dictionary[edge_info[0]] = 1
 			else:	
 				outdegree_dictionary[edge_info[0]] = outdegree_dictionary[edge_info[0]] + 1
-			
+		
 
 	return input_dictionary, output_dictionary, composite_dictionary, indegree_dictionary, outdegree_dictionary
 

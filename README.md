@@ -36,7 +36,7 @@ python bipartite_graph.py ko_expression.list
 # Additional Options:
 *Positional, required argument:**
 
-ko_expression.list
+expression_file
 
 **Optional arguments:**
 
