@@ -628,7 +628,7 @@ if iterations > 1:
 
 	print 'Comparing to simulated transcript distribution...\n'
 	input_interval_list, output_interval_list, composite_interval_list = monte_carlo_sim(reaction_graph, enzyme_list, iterations, compound_list, compound_dictionary, min_importance, min_degree, total, max)
-	print '\nDone.\n'
+	print 'Done.\n'
 	
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to files...\n'
