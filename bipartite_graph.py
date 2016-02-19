@@ -356,6 +356,8 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 		progress += increment
 		sys.stdout.write('\rProgress: ' + str(progress) + '%')
 		sys.stdout.flush()
+	
+	print '\n'
 		
 	# Compile the scores for each compound and take the mean and standard deviation
 	input_interval_list = []
