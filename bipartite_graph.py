@@ -320,16 +320,9 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 	output_dist_dict = {}
 	composite_dist_dict = {}
 	
-	print 'iteration:'
-	count = 0
-	full_count = 0
+	increment = 100.0 / float(iterations)
+	progress = 0.0
 	for current in range(0, iterations):
-		
-		count += 1
-		full_count += 1
-		if count == 100:
-			print full_count
-			count = 0
 			
 		sim_transcriptome = random.sample(distribution, gene_count)
 	
@@ -359,6 +352,10 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 				composite_dist_dict[index[1]] = [float(index[2])]
 			else:
 				composite_dist_dict[index[1]].append(float(index[2]))
+		
+		progress += increment
+		sys.stdout.write('\rProgress: ' + str(progress) + '%')
+		sys.stdout.flush()
 		
 	# Compile the scores for each compound and take the mean and standard deviation
 	input_interval_list = []
