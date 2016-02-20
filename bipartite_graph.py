@@ -222,6 +222,7 @@ Reactions unsuccessfully translated to Compounds: {Reaction_failed}
 	return network_list, compound_list, enzyme_list
 
 
+# Compile surrounding input and output node transcripts into a dictionary, same for degree information
 def network_dictionaries(network, transcript_dictionary):
 
 	# Open blank dictionaries to populate with compounds and their corresponding transcription
@@ -367,36 +368,35 @@ def monte_carlo_sim(network, kos, iterations, compound_dict, min_importance, min
 	
 	distribution = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
 	distribution = [i for i in distribution if i < seq_max]  # screen for transcript mapping greater than largest value actually sequenced
-
+	
 	input_distribution_dict = {}
 	output_distribution_dict = {}
 	
 	increment = 100.0 / float(iterations)
 	progress = 0.0
+	sys.stdout.write('\rProgress: ' + str(progress) + '%')
+	sys.stdout.flush()
+	
+	for index in compound_dict.keys():
+		input_distribution_dict[index] = []
+		output_distribution_dict[index] = []
+	
 	for current in range(0, iterations):
 			
 		sim_transcriptome = random.sample(distribution, gene_count)
-	
+
 		sim_transcript_dict = {}
 		for index in range(0, gene_count):
 			sim_transcript_dict[kos[index]] = sim_transcriptome[index]
 		
 		substrate_dict, degree_dict = network_dictionaries(network, sim_transcript_dict)
-		
 		inputscore_list, outputscore_list, degree_list = calculate_importance(substrate_dict, degree_dict, compound_dict, min_importance, min_degree)
 		
 		# Make dictionaries of scores for each compound for each direction
 		for index in inputscore_list:
-			if not index[1] in input_distribution_dict.keys():			
-				input_distribution_dict[index[1]] = [float(index[2])]
-			else:
-				input_distribution_dict[index[1]].append(float(index[2]))
-		
+			input_distribution_dict[index[1]].append(float(index[2]))
 		for index in outputscore_list:
-			if not index[1] in output_distribution_dict.keys():			
-				output_distribution_dict[index[1]] = [float(index[2])]
-			else:
-				output_distribution_dict[index[1]].append(float(index[2]))
+			output_distribution_dict[index[1]].append(float(index[2]))
 		
 		progress += increment
 		sys.stdout.write('\rProgress: ' + str(progress) + '%')
@@ -420,6 +420,7 @@ def monte_carlo_sim(network, kos, iterations, compound_dict, min_importance, min
 	return input_interval_list, output_interval_list
 
 
+# Assesses measured values against confidence interval from Monte Carlo simulation 
 def confidence_interval(importance, interval):
 
 	labeled_confidence = []
@@ -593,15 +594,13 @@ else:
 
 #---------------------------------------------------------------------------------------#		
 
+# Wrap everything up
+
 # Write network topology info to files
 print 'Writing degree information to files...\n' 
 outname = file_name + '.topology.txt'
 write_output('Compound_name	Compound_code	Indegree	Outdegree\n', degree_list, outname)
 print 'Done.\n'
-
-#---------------------------------------------------------------------------------------#		
-
-# Wrap everything up
 
 # Return to the directory the script was called to
 os.chdir(starting_directory)	
