@@ -365,7 +365,7 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 	return input_interval_list, output_interval_list
 
 
-def network_dictionaries(network, score_dictionary):
+def network_dictionaries(network, transcript_dictionary):
 	# need to add compound list, and change score to transcription
 
 	# Open blank dictionaries to populate with compounds and their corresponding transcription
@@ -382,13 +382,13 @@ def network_dictionaries(network, score_dictionary):
 			# Fill output score dictionary
 			if not edge_info[1] in output_dictionary.keys():
 				try:
-					temp_score = score_dictionary[edge_info[0]]
+					temp_score = transcript_dictionary[edge_info[0]]
 				except KeyError:
 					temp_score = 0
 		
 				output_dictionary[edge_info[1]] = [temp_score]
 			else:
-				output_dictionary[edge_info[1]].append(score_dictionary[edge_info[0]])
+				output_dictionary[edge_info[1]].append(transcript_dictionary[edge_info[0]])
 			
 			# Fill indegree dictionary	
 			if not edge_info[1] in indegree_dictionary.keys():
@@ -404,14 +404,14 @@ def network_dictionaries(network, score_dictionary):
 		
 			if not edge_info[0] in input_dictionary.keys():
 				try:
-					temp_score = score_dictionary[edge_info[1]]
+					temp_score = transcript_dictionary[edge_info[1]]
 				except KeyError:
 					temp_score = 0
 
 				input_dictionary[edge_info[0]] = [temp_score]
 			
 			else:
-				input_dictionary[edge_info[0]].append(score_dictionary[edge_info[1]])
+				input_dictionary[edge_info[0]].append(transcript_dictionary[edge_info[1]])
 			
 			# Fill outdegree dictionary
 			if not edge_info[0] in outdegree_dictionary.keys():
@@ -419,9 +419,18 @@ def network_dictionaries(network, score_dictionary):
 			else:	
 				outdegree_dictionary[edge_info[0]] = outdegree_dictionary[edge_info[0]] + 1
 	
-	degree_dictionary = {}
-	score_dictionary = {}
+	all_degree_dictionary = {}
+	all_transcript_dictionary = {}
+	
+	
+	
+	
+	for index in transcript_dictionary.keys():
 	# need to write for loop to generate single score and degree dictionaries		
+
+
+
+
 
 	return input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary
 
@@ -516,7 +525,7 @@ if file_name != 'organism':
 
 # Read in and create dictionary for scores
 with open(KO_input_file, 'r') as KO_file:
-	score_dict, KO_list, total, max = transcription_dictionary(KO_file)
+	transcript_dict, KO_list, total, max = transcription_dictionary(KO_file)
 
 #---------------------------------------------------------------------------------------#		
 
@@ -528,6 +537,7 @@ script_path = str(os.path.dirname(os.path.realpath(__file__)))
 directory = str(os.getcwd()) + '/' + file_name + '.bipartite.files'
 if not os.path.exists(directory):	
 	os.makedirs(directory)
+	
 os.chdir(directory)
 
 #---------------------------------------------------------------------------------------#		
@@ -579,7 +589,7 @@ with open('enzyme.lst', 'w') as enzyme_file:
 			
 # Calculate actual importance scores for each compound in the network
 print 'Calculating compound node connectedness and metabolite scores...\n'
-input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary = network_dictionaries(reaction_graph, score_dict)
+input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary = network_dictionaries(reaction_graph, transcript_dict)
 inputscore_list, outputscore_list, indegree_list, outdegree_list, alldegree_list = calc_scores(compound_list, input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary, compound_dictionary, min_importance, min_degree)
 print 'Done.\n'
 
@@ -594,7 +604,6 @@ if iterations > 1:
 	
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to files...\n'
-	
 	outname = file_name + '.input_score.monte_carlo.txt'
 	final_output = find_sig(inputscore_list, input_interval_list)
 	write_output('Compound_name	Compound_code	Input_metabolite_score	Simulated_Mean	Simulated_Std_Dev	Relationship_to_Mean	Significance\n', final_output, outname)
@@ -602,29 +611,24 @@ if iterations > 1:
 	outname = file_name + '.output_score.monte_carlo.txt'
 	final_output = find_sig(outputscore_list, output_interval_list)
 	write_output('Compound_name	Compound_code	Output_metabolite_score	Simulated_Mean	Simulated_Std_Dev	Relationship_to_Mean	Significance\n', final_output, outname)
-
 	print 'Done.\n'
 	
 else:
 	print 'Writing score data to files...\n' 
-	
 	outname = file_name + '.input_score.txt'
 	write_output('Compound_name	Compound_code	Input_metabolite_score\n', inputscore_list, outname)
 
 	outname = file_name + '.output_score.txt'
 	write_output('Compound_name	Compound_code	Output_metabolite_score\n', outputscore_list, outname)
-	
 	print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
 
 # Write network topology info to files
 print 'Writing degree information to files...\n' 
-
 compiled_degree = combined_degree(indegree_list, outdegree_list, alldegree_list, compound_dictionary)
 outname = file_name + '.topology.txt'
 write_output('Compound_name	Compound_code	Indegree	Outdegree	Total_Edges\n', compiled_degree, outname)
-
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
