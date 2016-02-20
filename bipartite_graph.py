@@ -221,144 +221,6 @@ Reactions unsuccessfully translated to Compounds: {Reaction_failed}
 	return network_list, compound_list, enzyme_list
 
 
-# Calculate input and output scores and well as degree of each compound node
-def calculate_importance(input_score_dict, output_score_dict, indegree_dict, outdegree_dict, compound_dict, min_score, min_deg):
-	
-	# Open blank lists for all calculated values
-	inputscore_list = []
-	outputscore_list = []
-	indegree_list = []
-	outdegree_list = []
-		
-	# Calculate cumulative scores for all compounds as inputs, outputs, or both
-	for index in compound_dict.keys():
-		
-		try:
-			compound = compound_dict[index]
-		except KeyError:	
-			compound = index
-			
-		try:
-			outdegree = int(outdegree_dict[index])
-		except KeyError:
-			outdegree = 0	
-		try:
-			indegree = int(indegree_dict[index])
-		except KeyError:
-			indegree = 0	
-			
-		
-		try:
-			input_scores = [int(x) for x in input_score_dict[index]]
-		except KeyError:
-			input_scores = [0]
-		if outdegree == 0:
-			final_score = 0
-		else:
-			final_score = float(sum(input_scores) / outdegree)
-			if indegree == 0:
-				final_score = final_score * (1 + outdegree) * outdegree
-		if final_score >= min_score:
-			inputscore_list.append([compound, index, str(final_score)])
-		
-		
-		try:
-			output_scores = [int(x) for x in output_score_dict[index]]
-		except KeyError:
-			output_scores = [0]
-		if indegree == 0:
-			final_score = 0
-		else:
-			final_score = float(sum(input_scores) / indegree)
-			if outdegree == 0:
-				final_score = final_score * (1 + indegree) * indegree
-		if final_score >= min_score:
-			outputscore_list.append([compound, index, str(final_score)])
-
-					
-		if indegree >= min_deg:
-			indegree_list.append([compound, index, str(indegree)])
-		if outdegree >= min_deg:
-			outdegree_list.append([compound, index, str(outdegree)])
-				
-				
-	return inputscore_list, outputscore_list, indegree_list, outdegree_list, alldegree_list
-	
-
-# Function to write data to output files	
-def write_output(header, out_data, file_name):
-
-	with open(file_name, 'w') as outfile: 
-		
-		outfile.write(header)
-			
-		for index in out_data:
-			index = [str(x) for x in index]
-			index[-1] = str(index[-1]) + '\n'
-			outfile.write('\t'.join(index))
-
-
-# Perform iterative Monte Carlo simulation to create confidence interval for compound importance values
-def monte_carlo_sim(network, kos, iterations, compound_dict, min_importance, min_degree, seq_total, seq_max):
-	
-	gene_count = len(kos)
-	probability = 1.0 / gene_count
-	
-	distribution = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
-	distribution = [i for i in distribution if i < seq_max]  # screen for transcript mapping greater than largest value actually sequenced
-
-	input_distribution_dict = {}
-	output_distribution_dict = {}
-	
-	increment = 100.0 / float(iterations)
-	progress = 0.0
-	for current in range(0, iterations):
-			
-		sim_transcriptome = random.sample(distribution, gene_count)
-	
-		sim_transcript_dict = {}
-		for index in range(0, gene_count):
-			sim_transcript_dict[kos[index]] = sim_transcriptome[index]
-		
-		substrate_dict, degree_dict = network_dictionaries(network, sim_transcript_dict)
-		
-		inputscore_list, outputscore_list, degree_list = calculate_importance(substrate_dict, degree_dict, compound_dict, min_importance, min_degree)
-		
-		# Make dictionaries of scores for each compound for each direction
-		for index in inputscore_list:
-			if not index[1] in input_distribution_dict.keys():			
-				input_distribution_dict[index[1]] = [float(index[2])]
-			else:
-				input_distribution_dict[index[1]].append(float(index[2]))
-		
-		for index in outputscore_list:
-			if not index[1] in output_distribution_dict.keys():			
-				output_distribution_dict[index[1]] = [float(index[2])]
-			else:
-				output_distribution_dict[index[1]].append(float(index[2]))
-		
-		progress += increment
-		sys.stdout.write('\rProgress: ' + str(progress) + '%')
-		sys.stdout.flush()
-	
-	print '\n'
-		
-	# Compile the scores for each compound and take the mean and standard deviation
-	input_interval_list = []
-	output_interval_list = []
-	for index in compound_dict.keys():
-
-		input_current_mean = float("%.3f" % (numpy.mean(input_distribution_dict[index])))
-		input_current_std = float("%.3f" % (numpy.std(input_distribution_dict[index])))
-		input_interval_list.append([index, input_current_mean, input_current_std])
-
-		output_current_mean = float("%.3f" % (numpy.mean(output_distribution_dict[index])))
-		output_current_std = float("%.3f" % (numpy.std(output_distribution_dict[index])))
-		output_interval_list.append([index, output_current_mean, output_current_std])
-
-	return input_interval_list, output_interval_list
-
-
 def network_dictionaries(network, transcript_dictionary):
 
 	# Open blank dictionaries to populate with compounds and their corresponding transcription
@@ -435,8 +297,130 @@ def network_dictionaries(network, transcript_dictionary):
 		except KeyError:
 			indegree = 0
 		all_degree_dictionary[index] = [index, indegree, outdegree]
+	
 		
 	return all_transcript_dictionary, all_degree_dictionary
+
+
+# Calculate input and output scores and well as degree of each compound node
+def calculate_importance(transcript_dict, degree_dict, compound_dict, min_score, min_deg):
+	
+	# Open blank lists for all calculated values
+	inputscore_list = []
+	outputscore_list = []
+	degree_list = []
+		
+	# Calculate cumulative scores for all compounds as inputs, outputs, or both
+	for index in compound_dict.keys():
+		
+		try:
+			compound = compound_dict[index]
+		except KeyError:	
+			compound = index
+			
+		try:
+			outdegree = int(outdegree_dict[index])
+		except KeyError:
+			outdegree = 0	
+		try:
+			indegree = int(indegree_dict[index])
+		except KeyError:
+			indegree = 0	
+			
+		
+		try:
+			input_scores = [int(x) for x in input_score_dict[index]]
+		except KeyError:
+			input_scores = [0]
+		if outdegree == 0:
+			final_score = 0
+		else:
+			final_score = float(sum(input_scores) / outdegree)
+			if indegree == 0:
+				final_score = final_score * (1 + outdegree) * outdegree
+		if final_score >= min_score:
+			inputscore_list.append([compound, index, str(final_score)])
+		
+		
+		try:
+			output_scores = [int(x) for x in output_score_dict[index]]
+		except KeyError:
+			output_scores = [0]
+		if indegree == 0:
+			final_score = 0
+		else:
+			final_score = float(sum(input_scores) / indegree)
+			if outdegree == 0:
+				final_score = final_score * (1 + indegree) * indegree
+		if final_score >= min_score:
+			outputscore_list.append([compound, index, str(final_score)])
+
+					
+		if indegree >= min_deg and outdegree >= min_deg:
+			degree_list.append([compound, index, str(indegree), str(outdegree)])
+
+	return inputscore_list, outputscore_list, degree_list
+	
+
+# Perform iterative Monte Carlo simulation to create confidence interval for compound importance values
+def monte_carlo_sim(network, kos, iterations, compound_dict, min_importance, min_degree, seq_total, seq_max):
+	
+	gene_count = len(kos)
+	probability = 1.0 / gene_count
+	
+	distribution = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
+	distribution = [i for i in distribution if i < seq_max]  # screen for transcript mapping greater than largest value actually sequenced
+
+	input_distribution_dict = {}
+	output_distribution_dict = {}
+	
+	increment = 100.0 / float(iterations)
+	progress = 0.0
+	for current in range(0, iterations):
+			
+		sim_transcriptome = random.sample(distribution, gene_count)
+	
+		sim_transcript_dict = {}
+		for index in range(0, gene_count):
+			sim_transcript_dict[kos[index]] = sim_transcriptome[index]
+		
+		substrate_dict, degree_dict = network_dictionaries(network, sim_transcript_dict)
+		
+		inputscore_list, outputscore_list, degree_list = calculate_importance(substrate_dict, degree_dict, compound_dict, min_importance, min_degree)
+		
+		# Make dictionaries of scores for each compound for each direction
+		for index in inputscore_list:
+			if not index[1] in input_distribution_dict.keys():			
+				input_distribution_dict[index[1]] = [float(index[2])]
+			else:
+				input_distribution_dict[index[1]].append(float(index[2]))
+		
+		for index in outputscore_list:
+			if not index[1] in output_distribution_dict.keys():			
+				output_distribution_dict[index[1]] = [float(index[2])]
+			else:
+				output_distribution_dict[index[1]].append(float(index[2]))
+		
+		progress += increment
+		sys.stdout.write('\rProgress: ' + str(progress) + '%')
+		sys.stdout.flush()
+	
+	print '\n'
+		
+	# Compile the scores for each compound and take the mean and standard deviation
+	input_interval_list = []
+	output_interval_list = []
+	for index in compound_dict.keys():
+
+		input_current_mean = float("%.3f" % (numpy.mean(input_distribution_dict[index])))
+		input_current_std = float("%.3f" % (numpy.std(input_distribution_dict[index])))
+		input_interval_list.append([index, input_current_mean, input_current_std])
+
+		output_current_mean = float("%.3f" % (numpy.mean(output_distribution_dict[index])))
+		output_current_std = float("%.3f" % (numpy.std(output_distribution_dict[index])))
+		output_interval_list.append([index, output_current_mean, output_current_std])
+
+	return input_interval_list, output_interval_list
 
 
 def confidence_interval(importance, interval):
@@ -488,33 +472,17 @@ def confidence_interval(importance, interval):
 	return labeled_confidence
 
 
-def combined_degree(in_list, out_list, all_list, compound_dict):
-	
-	in_dict = {}
-	for index in in_list:
-		in_dict[index[1]] = int(index[2])
-	out_dict = {}
-	for index in out_list:
-		out_dict[index[1]] = int(index[2])
-	all_dict = {}
-	compound_list = []
-	for index in all_list:
-		all_dict[index[1]] = int(index[2])
-	
-	compiled = []
-	for index in all_dict.keys():
-		try:
-			indegree = in_dict[index]
-		except KeyError:
-			indegree = 0
-		try:
-			outdegree = out_dict[index]
-		except KeyError:
-			outdegree = 0
+# Function to write data to output files	
+def write_output(header, out_data, file_name):
+
+	with open(file_name, 'w') as outfile: 
+		
+		outfile.write(header)
 			
-		compiled.append([compound_dict[index][0], index, indegree, outdegree, all_dict[index]])
-	
-	return compiled
+		for index in out_data:
+			index = [str(x) for x in index]
+			index[-1] = str(index[-1]) + '\n'
+			outfile.write('\t'.join(index))
 
 
 ##########################################################################################		
