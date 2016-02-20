@@ -94,10 +94,6 @@ elif iterations < 0:
 # Define functions
 
 # Create a dictionary for transcript value associated with its KO
-
-
-
-# Need to change every instance of this to transcription_dictionary()
 def transcription_dictionary(KO_file):
 	
 	seq_total = 0  # Total number of reads
@@ -421,17 +417,20 @@ def network_dictionaries(network, transcript_dictionary):
 	
 	all_degree_dictionary = {}
 	all_transcript_dictionary = {}
-	
-	
-	
-	
 	for index in transcript_dictionary.keys():
 	# need to write for loop to generate single score and degree dictionaries		
+		
+		input_score = sum(input_dictionary[index])
+		output_score = sum(output_dictionary[index])
+		all_transcript_dictionary[index] = [index, input_score, output_score]
+		
+		outdegree = sum(outdegree_dictionary[index])
+		indegree = sum(indegree_dictionary[index])
+		all_degree_dictionary[index] = [index, indegree, outdegree]
+		
+		# check to make sure of no key errors
 
-
-
-
-
+	return all_transcript_dictionary, all_degree_dictionary
 	return input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary
 
 
