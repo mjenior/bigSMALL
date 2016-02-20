@@ -96,27 +96,32 @@ elif iterations < 0:
 # Define functions
 
 # Create a dictionary for transcript value associated with its KO
-def score_dictionary(KO_file):
+
+
+
+# Need to change every instance of this to transcription_dictionary()
+def transcription_dictionary(KO_file):
 	
 	seq_total = 0
 	seq_max = 0
-	score_dictionary = {}
+	score_dict = {}
+	
 	KO_list = []
 	for index in KO_file:
 		index_split = index.split()
 		seq_total += float(index_split[1])
 		KO_list.append(str(index_split[0]))
 		
-		if not str(index_split[0]) in score_dictionary.keys():
-			score_dictionary[str(index_split[0])] = float(index_split[1])
+		if not str(index_split[0]) in score_dict.keys():
+			score_dict[str(index_split[0])] = float(index_split[1])
 		else:
-			score_dictionary[str(index_split[0])] = score_dictionary[str(index_split[0])] + float(index_split[1])
-			if score_dictionary[str(index_split[0])] > seq_max: seq_max = score_dictionary[str(index_split[0])]
+			score_dictionary[str(index_split[0])] = score_dict[str(index_split[0])] + float(index_split[1])
+			if score_dict[str(index_split[0])] > seq_max: seq_max = score_dict[str(index_split[0])]
 			continue
 	
 	KO_list = list(set(KO_list))
 	
-	return score_dictionary, KO_list, seq_total, seq_max
+	return score_dict, KO_list, seq_total, seq_max
 
 
 # Translates a list of KOs to the bipartite graph
@@ -383,6 +388,7 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 
 
 def network_dictionaries(network, score_dictionary):
+	# need to add compound list, and change score to transcription
 
 	# Open blank dictionaries to populate with compounds and their corresponding scores depending on where they are in the given reaction
 	input_dictionary = {}
@@ -459,7 +465,10 @@ def network_dictionaries(network, score_dictionary):
 				outdegree_dictionary[edge_info[0]] = 1
 			else:	
 				outdegree_dictionary[edge_info[0]] = outdegree_dictionary[edge_info[0]] + 1
-			
+	
+	degree_dictionary = {}
+	score_dictionary = {}
+	# need to write for loop to generate single score and degree dictionaries		
 
 	return input_dictionary, output_dictionary, composite_dictionary, indegree_dictionary, outdegree_dictionary
 
@@ -554,7 +563,7 @@ if file_name != 'organism':
 
 # Read in and create dictionary for scores
 with open(KO_input_file, 'r') as KO_file:
-	score_dict, KO_list, total, max = score_dictionary(KO_file)
+	score_dict, KO_list, total, max = transcription_dictionary(KO_file)
 
 #---------------------------------------------------------------------------------------#		
 
