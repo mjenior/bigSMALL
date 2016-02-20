@@ -222,7 +222,7 @@ Reactions unsuccessfully translated to Compounds: {Reaction_failed}
 
 
 # Calculate input and output scores and well as degree of each compound node
-def calculate_importance(compound_list, input_score_dict, output_score_dict, indegree_dict, outdegree_dict, compound_dict, min_score, min_deg):
+def calculate_importance(input_score_dict, output_score_dict, indegree_dict, outdegree_dict, compound_dict, min_score, min_deg):
 	
 	# Open blank lists for all calculated values
 	inputscore_list = []
@@ -230,9 +230,9 @@ def calculate_importance(compound_list, input_score_dict, output_score_dict, ind
 	indegree_list = []
 	outdegree_list = []
 	alldegree_list = []
-	
+		
 	# Calculate cumulative scores for all compounds as inputs, outputs, or both
-	for index in compound_list:
+	for index in compound_dict.keys():
 		
 		try:
 			compound = compound_dict[index]
@@ -300,13 +300,13 @@ def write_output(header, out_data, file_name):
 
 
 # Perform iterative Monte Carlo simulation to create confidence interval for compound importance values
-def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_importance, min_degree, seq_total, seq_max):
+def monte_carlo_sim(network, kos, iterations, compound_dict, min_importance, min_degree, seq_total, seq_max):
 	
 	gene_count = len(kos)
 	probability = 1.0 / gene_count
 	
 	distribution = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
-	distribution = [i for i in distribution if i < seq_max] # screen for transcript mapping greater than largest value actually sequenced
+	distribution = [i for i in distribution if i < seq_max]  # screen for transcript mapping greater than largest value actually sequenced
 
 	input_dist_dict = {}
 	output_dist_dict = {}
@@ -347,7 +347,7 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 	# Compile the scores for each compound and take the mean and standard deviation
 	input_interval_list = []
 	output_interval_list = []
-	for index in compounds:
+	for index in compound_dict.keys():
 
 		input_current_mean = float("%.3f" % (numpy.mean(input_dist_dict[index])))
 		input_current_std = float("%.3f" % (numpy.std(input_dist_dict[index])))
@@ -356,7 +356,6 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 		output_current_mean = float("%.3f" % (numpy.mean(output_dist_dict[index])))
 		output_current_std = float("%.3f" % (numpy.std(output_dist_dict[index])))
 		output_interval_list.append([index, output_current_mean, output_current_std])
-
 
 	return input_interval_list, output_interval_list
 
@@ -443,7 +442,7 @@ def network_dictionaries(network, transcript_dictionary):
 
 def confidence_interval(importance, interval):
 
-	labeled_importance = []
+	labeled_confidence = []
 
 	for index in range(0, len(importance)):
 		
@@ -457,16 +456,16 @@ def confidence_interval(importance, interval):
 				
 					if float(importance[index][2]) > (float(interval[index][1]) + (float(interval[index][2]) * 3)):
 						temp_list.extend((interval[index][1], interval[index][2], '+', '***'))
-						labeled_importance.append(temp_list)		
+						labeled_confidence.append(temp_list)		
 					else:
 						temp_list.extend((interval[index][1], interval[index][2], '+', '**'))
-						labeled_importance.append(temp_list)
+						labeled_confidence.append(temp_list)
 				else:
 					temp_list.extend((interval[index][1], interval[index][2], '+', '*'))
-					labeled_importance.append(temp_list)
+					labeled_confidence.append(temp_list)
 			else:
 				temp_list.extend((interval[index][1], interval[index][2], '+', 'n.s.'))
-				labeled_importance.append(temp_list)
+				labeled_confidence.append(temp_list)
 				
 		elif float(importance[index][2]) < float(interval[index][1]):
 
@@ -476,18 +475,18 @@ def confidence_interval(importance, interval):
 					
 					if float(importance[index][2]) < (float(interval[index][1]) - (float(interval[index][2]) * 3)):
 						temp_list.extend((interval[index][1], interval[index][2], '-', '***'))
-						labeled_importance.append(temp_list)
+						labeled_confidence.append(temp_list)
 					else:
 						temp_list.extend((interval[index][1], interval[index][2], '-', '**'))
-						labeled_importance.append(temp_list)
+						labeled_confidence.append(temp_list)
 				else:
 					temp_list.extend((interval[index][1], interval[index][2], '-', '*'))
-					labeled_importance.append(temp_list)
+					labeled_confidence.append(temp_list)
 			else:
 				temp_list.extend((interval[index][1], interval[index][2], '-', 'n.s.'))
-				labeled_importance.append(temp_list)
+				labeled_confidence.append(temp_list)
 	
-	return labeled_importance
+	return labeled_confidence
 
 
 def combined_degree(in_list, out_list, all_list, compound_dict):
@@ -596,7 +595,7 @@ with open('enzyme.lst', 'w') as enzyme_file:
 # Calculate actual importance scores for each compound in the network
 print 'Calculating compound node connectedness and metabolite scores...\n'
 input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary = network_dictionaries(reaction_graph, transcript_dict)
-inputscore_list, outputscore_list, indegree_list, outdegree_list, alldegree_list = calculate_importance(compound_list, input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary, compound_dictionary, min_importance, min_degree)
+inputscore_list, outputscore_list, indegree_list, outdegree_list, alldegree_list = calculate_importance(input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary, compound_dictionary, min_importance, min_degree)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
@@ -605,7 +604,7 @@ print 'Done.\n'
 if iterations > 1:
 
 	print 'Comparing to simulated transcript distribution...\n'
-	input_interval_list, output_interval_list = monte_carlo_sim(reaction_graph, enzyme_list, iterations, compound_list, compound_dictionary, min_importance, min_degree, total, max)
+	input_interval_list, output_interval_list = monte_carlo_sim(reaction_graph, enzyme_list, iterations, compound_dictionary, min_importance, min_degree, total, max)
 	print '\nDone.\n'
 	
 	# Write all the calculated data to files
