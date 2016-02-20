@@ -219,12 +219,11 @@ Reactions unsuccessfully translated to Compounds: {Reaction_failed}
 
 
 # Calculate input and output scores and well as degree of each compound node
-def calc_scores(compound_list, input_score_dict, output_score_dict, composite_score_dict, indegree_dict, outdegree_dict, compound_dict, min_score, min_deg):
+def calc_scores(compound_list, input_score_dict, output_score_dict, indegree_dict, outdegree_dict, compound_dict, min_score, min_deg):
 	
 	# Open blank lists for all calculated values
 	inputscore_list = []
 	outputscore_list = []
-	compositescore_list = []
 	indegree_list = []
 	outdegree_list = []
 	alldegree_list = []
@@ -274,29 +273,14 @@ def calc_scores(compound_list, input_score_dict, output_score_dict, composite_sc
 		if final_score >= min_score:
 			outputscore_list.append([compound, index, str(final_score)])
 
-
-		try:
-			composite_scores = [int(x) for x in composite_score_dict[index]]
-		except KeyError:
-			composite_scores = [0]
-		composite_degree = indegree + outdegree
-		if composite_degree == 0:
-			final_score = 0
-		else:
-			final_score = float(sum(composite_scores) / composite_degree)
-		if final_score >= min_score:
-			compositescore_list.append([compound, index, str(final_score)])	
-			
-		
+					
 		if indegree >= min_deg:
 			indegree_list.append([compound, index, str(indegree)])
 		if outdegree >= min_deg:
 			outdegree_list.append([compound, index, str(outdegree)])
-		if composite_degree >= min_deg:
-			alldegree_list.append([compound, index, str(composite_degree)])
 				
 				
-	return inputscore_list, outputscore_list, compositescore_list, indegree_list, outdegree_list, alldegree_list
+	return inputscore_list, outputscore_list, indegree_list, outdegree_list, alldegree_list
 	
 
 # Function to write data to output files	
@@ -351,12 +335,6 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 				output_dist_dict[index[1]] = [float(index[2])]
 			else:
 				output_dist_dict[index[1]].append(float(index[2]))
-				
-		for index in compositescore_list:
-			if not index[1] in composite_dist_dict.keys():			
-				composite_dist_dict[index[1]] = [float(index[2])]
-			else:
-				composite_dist_dict[index[1]].append(float(index[2]))
 		
 		progress += increment
 		sys.stdout.write('\rProgress: ' + str(progress) + '%')
@@ -367,7 +345,6 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 	# Compile the scores for each compound and take the mean and standard deviation
 	input_interval_list = []
 	output_interval_list = []
-	composite_interval_list = []
 	for index in compounds:
 
 		input_current_mean = float("%.3f" % (numpy.mean(input_dist_dict[index])))
@@ -378,13 +355,8 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 		output_current_std = float("%.3f" % (numpy.std(output_dist_dict[index])))
 		output_interval_list.append([index, output_current_mean, output_current_std])
 
-		composite_current_mean = numpy.mean(composite_dist_dict[index])
-		composite_current_mean = float("%.3f" % composite_current_mean)
-		composite_current_std = numpy.std(composite_dist_dict[index])
-		composite_current_std = float("%.3f" % composite_current_std)
-		composite_interval_list.append([index, composite_current_mean, composite_current_std])
 
-	return input_interval_list, output_interval_list, composite_interval_list
+	return input_interval_list, output_interval_list
 
 
 def network_dictionaries(network, score_dictionary):
@@ -393,15 +365,12 @@ def network_dictionaries(network, score_dictionary):
 	# Open blank dictionaries to populate with compounds and their corresponding scores depending on where they are in the given reaction
 	input_dictionary = {}
 	output_dictionary = {}
-	composite_dictionary = {}
-
-	# indegree and outdegree are immutable metrics that don't rely on the transcript density and will say something about the network strictly based on topology
 	indegree_dictionary = {}
 	outdegree_dictionary = {}
 
 	for edge_info in network:
 	
-		# Output, 'K' is useful because it is at the beginning of every KO code
+		# Output, 'C' is useful because it is at the beginning of every compound code
 		if edge_info[1][0] == 'C':
 		
 			# Fill output score dictionary
@@ -414,17 +383,6 @@ def network_dictionaries(network, score_dictionary):
 				output_dictionary[edge_info[1]] = [temp_score]
 			else:
 				output_dictionary[edge_info[1]].append(score_dictionary[edge_info[0]])
-			
-			# Composite	(first half)
-			if not edge_info[1] in composite_dictionary.keys():
-				try:
-					temp_score = score_dictionary[edge_info[0]]
-				except KeyError:
-					temp_score = 0
-		
-				composite_dictionary[edge_info[1]] = [temp_score]
-			else:
-				composite_dictionary[edge_info[1]].append(score_dictionary[edge_info[0]])
 			
 			# Fill indegree dictionary	
 			if not edge_info[1] in indegree_dictionary.keys():
@@ -448,17 +406,6 @@ def network_dictionaries(network, score_dictionary):
 			
 			else:
 				input_dictionary[edge_info[0]].append(score_dictionary[edge_info[1]])
-		
-			# Composite	(second half)
-			if not edge_info[0] in composite_dictionary.keys():
-				try:
-					temp_score = score_dictionary[edge_info[1]]
-				except KeyError:
-					temp_score = 0
-				
-				composite_dictionary[edge_info[0]] = [temp_score]
-			else:
-				composite_dictionary[edge_info[0]].append(score_dictionary[edge_info[1]])
 			
 			# Fill outdegree dictionary
 			if not edge_info[0] in outdegree_dictionary.keys():
@@ -470,7 +417,7 @@ def network_dictionaries(network, score_dictionary):
 	score_dictionary = {}
 	# need to write for loop to generate single score and degree dictionaries		
 
-	return input_dictionary, output_dictionary, composite_dictionary, indegree_dictionary, outdegree_dictionary
+	return input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary
 
 
 def find_sig(importance, interval):
@@ -626,8 +573,8 @@ with open('enzyme.lst', 'w') as enzyme_file:
 			
 # Calculate actual importance scores for each compound in the network
 print 'Calculating compound node connectedness and metabolite scores...\n'
-input_dictionary, output_dictionary, composite_dictionary, indegree_dictionary, outdegree_dictionary = network_dictionaries(reaction_graph, score_dict)
-inputscore_list, outputscore_list, compositescore_list, indegree_list, outdegree_list, alldegree_list = calc_scores(compound_list, input_dictionary, output_dictionary, composite_dictionary, indegree_dictionary, outdegree_dictionary, compound_dictionary, min_importance, min_degree)
+input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary = network_dictionaries(reaction_graph, score_dict)
+inputscore_list, outputscore_list, indegree_list, outdegree_list, alldegree_list = calc_scores(compound_list, input_dictionary, output_dictionary, composite_dictionary, indegree_dictionary, outdegree_dictionary, compound_dictionary, min_importance, min_degree)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
@@ -636,7 +583,7 @@ print 'Done.\n'
 if iterations > 1:
 
 	print 'Comparing to simulated transcript distribution...\n'
-	input_interval_list, output_interval_list, composite_interval_list = monte_carlo_sim(reaction_graph, enzyme_list, iterations, compound_list, compound_dictionary, min_importance, min_degree, total, max)
+	input_interval_list, output_interval_list = monte_carlo_sim(reaction_graph, enzyme_list, iterations, compound_list, compound_dictionary, min_importance, min_degree, total, max)
 	print '\nDone.\n'
 	
 	# Write all the calculated data to files
@@ -649,32 +596,29 @@ if iterations > 1:
 	outname = file_name + '.output_score.monte_carlo.txt'
 	final_output = find_sig(outputscore_list, output_interval_list)
 	write_output('Compound_name	Compound_code	Output_metabolite_score	Simulated_Mean	Simulated_Std_Dev	Relationship_to_Mean	Significance\n', final_output, outname)
-	
-	outname = file_name + '.composite_score.monte_carlo.txt'
-	final_output = find_sig(compositescore_list, composite_interval_list)
-	write_output('Compound_name	Compound_code	Composite_metabolite_score	Simulated_Mean	Simulated_Std_Dev	Relationship_to_Mean	Significance\n', final_output, outname)
-	
+
 	print 'Done.\n'
 	
 else:
 	print 'Writing score data to files...\n' 
+	
 	outname = file_name + '.input_score.txt'
 	write_output('Compound_name	Compound_code	Input_metabolite_score\n', inputscore_list, outname)
 
 	outname = file_name + '.output_score.txt'
 	write_output('Compound_name	Compound_code	Output_metabolite_score\n', outputscore_list, outname)
-
-	outname = file_name + '.composite_score.txt'
-	write_output('Compound_name	Compound_code	Composite_metabolite_score\n', compositescore_list, outname)
-	print '\nDone.\n'
+	
+	print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
 
 # Write network topology info to files
 print 'Writing degree information to files...\n' 
+
 compiled_degree = combined_degree(indegree_list, outdegree_list, alldegree_list, compound_dictionary)
 outname = file_name + '.topology.txt'
 write_output('Compound_name	Compound_code	Indegree	Outdegree	Total_Edges\n', compiled_degree, outname)
+
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
