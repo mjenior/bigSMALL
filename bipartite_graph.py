@@ -209,8 +209,7 @@ Reactions unsuccessfully translated to Compounds: {Reaction_failed}
 '''.format(KO_success = str(triedCountKO - excludedCountKO), KO_failed = str(excludedCountKO), Reaction_success = str(triedCountReact - excludedCountReact), Reaction_failed = str(excludedCountReact))
 
 	# Create file for reporting dictionary key errors
-	with open('key_error.log', 'w') as errorfile:
-		errorfile.write(error_string)
+	with open('key_error.log', 'w') as errorfile: errorfile.write(error_string)
 	
 	network_list = [list(x) for x in set(tuple(x) for x in network_list)]  # List of unique edges (KOs and compounds)
 	compound_list = list(set(compound_list))  # List of unique compounds
