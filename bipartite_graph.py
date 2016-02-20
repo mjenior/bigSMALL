@@ -209,7 +209,8 @@ Reactions unsuccessfully translated to Compounds: {Reaction_failed}
 '''.format(KO_success = str(triedCountKO - excludedCountKO), KO_failed = str(excludedCountKO), Reaction_success = str(triedCountReact - excludedCountReact), Reaction_failed = str(excludedCountReact))
 
 	# Create file for reporting dictionary key errors
-	with open('key_error.log', 'w') as errorfile: errorfile.write(error_string)
+	with open('key_error.log', 'w') as errorfile:
+		errorfile.write(error_string)
 	
 	network_list = [list(x) for x in set(tuple(x) for x in network_list)]  # List of unique edges (KOs and compounds)
 	compound_list = list(set(compound_list))  # List of unique compounds
@@ -221,7 +222,7 @@ Reactions unsuccessfully translated to Compounds: {Reaction_failed}
 
 
 # Calculate input and output scores and well as degree of each compound node
-def calc_scores(compound_list, input_score_dict, output_score_dict, indegree_dict, outdegree_dict, compound_dict, min_score, min_deg):
+def calculate_importance(compound_list, input_score_dict, output_score_dict, indegree_dict, outdegree_dict, compound_dict, min_score, min_deg):
 	
 	# Open blank lists for all calculated values
 	inputscore_list = []
@@ -316,13 +317,13 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 			
 		sim_transcriptome = random.sample(distribution, gene_count)
 	
-		score_dict = {}
+		sim_transcript_dict = {}
 		for index in range(0, gene_count):
-			score_dict[kos[index]] = sim_transcriptome[index]
+			sim_transcript_dict[kos[index]] = sim_transcriptome[index]
 		
-		input_dict, output_dict, indegree_dict, outdegree_dict = network_dictionaries(network, score_dict)
+		substrate_dict, degree_dict = network_dictionaries(network, sim_transcript_dict)
 		
-		inputscore_list, outputscore_list, indegree_list, outdegree_list, alldegree_list = calc_scores(compounds, input_dict, output_dict, indegree_dict, outdegree_dict, compound_dict, min_importance, min_degree)
+		inputscore_list, outputscore_list, indegree_list, outdegree_list, alldegree_list = calculate_importance(compounds, input_dict, output_dict, indegree_dict, outdegree_dict, compound_dict, min_importance, min_degree)
 		
 		# Make dictionaries of scores for each compound for each direction
 		for index in inputscore_list:
@@ -361,7 +362,6 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 
 
 def network_dictionaries(network, transcript_dictionary):
-	# need to add compound list, and change score to transcription
 
 	# Open blank dictionaries to populate with compounds and their corresponding transcription
 	input_dictionary = {}
@@ -411,29 +411,37 @@ def network_dictionaries(network, transcript_dictionary):
 			# Fill outdegree dictionary
 			if not edge_info[0] in outdegree_dictionary.keys():
 				outdegree_dictionary[edge_info[0]] = 1
-			else:	
+			else:
 				outdegree_dictionary[edge_info[0]] = outdegree_dictionary[edge_info[0]] + 1
 	
 	all_degree_dictionary = {}
 	all_transcript_dictionary = {}
 	for index in transcript_dictionary.keys():
-	# need to write for loop to generate single score and degree dictionaries		
 		
-		input_score = sum(input_dictionary[index])
-		output_score = sum(output_dictionary[index])
+		try:
+			input_score = sum(input_dictionary[index])
+		except KeyError:
+			input_score = 0
+		try:	
+			output_score = sum(output_dictionary[index])
+		except KeyError:
+			output_score = 0	
 		all_transcript_dictionary[index] = [index, input_score, output_score]
 		
-		outdegree = sum(outdegree_dictionary[index])
-		indegree = sum(indegree_dictionary[index])
+		try:
+			outdegree = sum(outdegree_dictionary[index])
+		except KeyError:
+			outdegree = 0
+		try:	
+			indegree = sum(indegree_dictionary[index])
+		except KeyError:
+			indegree = 0
 		all_degree_dictionary[index] = [index, indegree, outdegree]
 		
-		# check to make sure of no key errors
-
 	return all_transcript_dictionary, all_degree_dictionary
-	return input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary
 
 
-def find_sig(importance, interval):
+def confidence_interval(importance, interval):
 
 	labeled_importance = []
 
@@ -588,7 +596,7 @@ with open('enzyme.lst', 'w') as enzyme_file:
 # Calculate actual importance scores for each compound in the network
 print 'Calculating compound node connectedness and metabolite scores...\n'
 input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary = network_dictionaries(reaction_graph, transcript_dict)
-inputscore_list, outputscore_list, indegree_list, outdegree_list, alldegree_list = calc_scores(compound_list, input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary, compound_dictionary, min_importance, min_degree)
+inputscore_list, outputscore_list, indegree_list, outdegree_list, alldegree_list = calculate_importance(compound_list, input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary, compound_dictionary, min_importance, min_degree)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
@@ -603,11 +611,11 @@ if iterations > 1:
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to files...\n'
 	outname = file_name + '.input_score.monte_carlo.txt'
-	final_output = find_sig(inputscore_list, input_interval_list)
+	final_output = confidence_interval(inputscore_list, input_interval_list)
 	write_output('Compound_name	Compound_code	Input_metabolite_score	Simulated_Mean	Simulated_Std_Dev	Relationship_to_Mean	Significance\n', final_output, outname)
 	
 	outname = file_name + '.output_score.monte_carlo.txt'
-	final_output = find_sig(outputscore_list, output_interval_list)
+	final_output = confidence_interval(outputscore_list, output_interval_list)
 	write_output('Compound_name	Compound_code	Output_metabolite_score	Simulated_Mean	Simulated_Std_Dev	Relationship_to_Mean	Significance\n', final_output, outname)
 	print 'Done.\n'
 	
