@@ -229,7 +229,6 @@ def calculate_importance(input_score_dict, output_score_dict, indegree_dict, out
 	outputscore_list = []
 	indegree_list = []
 	outdegree_list = []
-	alldegree_list = []
 		
 	# Calculate cumulative scores for all compounds as inputs, outputs, or both
 	for index in compound_dict.keys():
@@ -323,7 +322,7 @@ def monte_carlo_sim(network, kos, iterations, compound_dict, min_importance, min
 		
 		substrate_dict, degree_dict = network_dictionaries(network, sim_transcript_dict)
 		
-		inputscore_list, outputscore_list, indegree_list, outdegree_list, alldegree_list = calculate_importance(compounds, input_dict, output_dict, indegree_dict, outdegree_dict, compound_dict, min_importance, min_degree)
+		inputscore_list, outputscore_list, degree_list = calculate_importance(substrate_dict, degree_dict, compound_dict, min_importance, min_degree)
 		
 		# Make dictionaries of scores for each compound for each direction
 		for index in inputscore_list:
@@ -376,11 +375,11 @@ def network_dictionaries(network, transcript_dictionary):
 			# Fill output score dictionary
 			if not edge_info[1] in output_dictionary.keys():
 				try:
-					temp_score = transcript_dictionary[edge_info[0]]
+					current_transcript_count = transcript_dictionary[edge_info[0]]
 				except KeyError:
-					temp_score = 0
+					current_transcript_count = 0
 		
-				output_dictionary[edge_info[1]] = [temp_score]
+				output_dictionary[edge_info[1]] = [current_transcript_count]
 			else:
 				output_dictionary[edge_info[1]].append(transcript_dictionary[edge_info[0]])
 			
@@ -398,11 +397,11 @@ def network_dictionaries(network, transcript_dictionary):
 		
 			if not edge_info[0] in input_dictionary.keys():
 				try:
-					temp_score = transcript_dictionary[edge_info[1]]
+					current_transcript_count = transcript_dictionary[edge_info[1]]
 				except KeyError:
-					temp_score = 0
+					current_transcript_count = 0
 
-				input_dictionary[edge_info[0]] = [temp_score]
+				input_dictionary[edge_info[0]] = [current_transcript_count]
 			
 			else:
 				input_dictionary[edge_info[0]].append(transcript_dictionary[edge_info[1]])
