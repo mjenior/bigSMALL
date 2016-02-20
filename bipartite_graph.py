@@ -507,7 +507,6 @@ script_path = str(os.path.dirname(os.path.realpath(__file__)))
 directory = str(os.getcwd()) + '/' + file_name + '.bipartite.files'
 if not os.path.exists(directory):	
 	os.makedirs(directory)
-	
 os.chdir(directory)
 
 #---------------------------------------------------------------------------------------#		
