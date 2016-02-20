@@ -594,8 +594,8 @@ with open('enzyme.lst', 'w') as enzyme_file:
 			
 # Calculate actual importance scores for each compound in the network
 print 'Calculating compound node connectedness and metabolite scores...\n'
-input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary = network_dictionaries(reaction_graph, transcript_dict)
-inputscore_list, outputscore_list, indegree_list, outdegree_list, alldegree_list = calculate_importance(input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary, compound_dictionary, min_importance, min_degree)
+transcript_dictionary, degree_dictionary = network_dictionaries(reaction_graph, transcript_dict)
+inputscore_list, outputscore_list, degree_list = calculate_importance(transcript_dictionary, degree_dictionary , compound_dictionary, min_importance, min_degree)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
