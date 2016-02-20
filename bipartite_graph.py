@@ -308,8 +308,8 @@ def monte_carlo_sim(network, kos, iterations, compound_dict, min_importance, min
 	distribution = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
 	distribution = [i for i in distribution if i < seq_max]  # screen for transcript mapping greater than largest value actually sequenced
 
-	input_dist_dict = {}
-	output_dist_dict = {}
+	input_distribution_dict = {}
+	output_distribution_dict = {}
 	
 	increment = 100.0 / float(iterations)
 	progress = 0.0
@@ -327,16 +327,16 @@ def monte_carlo_sim(network, kos, iterations, compound_dict, min_importance, min
 		
 		# Make dictionaries of scores for each compound for each direction
 		for index in inputscore_list:
-			if not index[1] in input_dist_dict.keys():			
-				input_dist_dict[index[1]] = [float(index[2])]
+			if not index[1] in input_distribution_dict.keys():			
+				input_distribution_dict[index[1]] = [float(index[2])]
 			else:
-				input_dist_dict[index[1]].append(float(index[2]))
+				input_distribution_dict[index[1]].append(float(index[2]))
 		
 		for index in outputscore_list:
-			if not index[1] in output_dist_dict.keys():			
-				output_dist_dict[index[1]] = [float(index[2])]
+			if not index[1] in output_distribution_dict.keys():			
+				output_distribution_dict[index[1]] = [float(index[2])]
 			else:
-				output_dist_dict[index[1]].append(float(index[2]))
+				output_distribution_dict[index[1]].append(float(index[2]))
 		
 		progress += increment
 		sys.stdout.write('\rProgress: ' + str(progress) + '%')
@@ -349,12 +349,12 @@ def monte_carlo_sim(network, kos, iterations, compound_dict, min_importance, min
 	output_interval_list = []
 	for index in compound_dict.keys():
 
-		input_current_mean = float("%.3f" % (numpy.mean(input_dist_dict[index])))
-		input_current_std = float("%.3f" % (numpy.std(input_dist_dict[index])))
+		input_current_mean = float("%.3f" % (numpy.mean(input_distribution_dict[index])))
+		input_current_std = float("%.3f" % (numpy.std(input_distribution_dict[index])))
 		input_interval_list.append([index, input_current_mean, input_current_std])
 
-		output_current_mean = float("%.3f" % (numpy.mean(output_dist_dict[index])))
-		output_current_std = float("%.3f" % (numpy.std(output_dist_dict[index])))
+		output_current_mean = float("%.3f" % (numpy.mean(output_distribution_dict[index])))
+		output_current_std = float("%.3f" % (numpy.std(output_distribution_dict[index])))
 		output_interval_list.append([index, output_current_mean, output_current_std])
 
 	return input_interval_list, output_interval_list
@@ -446,7 +446,7 @@ def confidence_interval(importance, interval):
 
 	for index in range(0, len(importance)):
 		
-		temp_list = importance[index]
+		current_importance = importance[index]
 		
 		if float(importance[index][2]) > float(interval[index][1]):
 		
@@ -455,17 +455,17 @@ def confidence_interval(importance, interval):
 				if float(importance[index][2]) > (float(interval[index][1]) + (float(interval[index][2]) * 2)):
 				
 					if float(importance[index][2]) > (float(interval[index][1]) + (float(interval[index][2]) * 3)):
-						temp_list.extend((interval[index][1], interval[index][2], '+', '***'))
-						labeled_confidence.append(temp_list)		
+						current_importance.extend((interval[index][1], interval[index][2], '+', '***'))
+						labeled_confidence.append(current_importance)		
 					else:
-						temp_list.extend((interval[index][1], interval[index][2], '+', '**'))
-						labeled_confidence.append(temp_list)
+						current_importance.extend((interval[index][1], interval[index][2], '+', '**'))
+						labeled_confidence.append(current_importance)
 				else:
-					temp_list.extend((interval[index][1], interval[index][2], '+', '*'))
-					labeled_confidence.append(temp_list)
+					current_importance.extend((interval[index][1], interval[index][2], '+', '*'))
+					labeled_confidence.append(current_importance)
 			else:
-				temp_list.extend((interval[index][1], interval[index][2], '+', 'n.s.'))
-				labeled_confidence.append(temp_list)
+				current_importance.extend((interval[index][1], interval[index][2], '+', 'n.s.'))
+				labeled_confidence.append(current_importance)
 				
 		elif float(importance[index][2]) < float(interval[index][1]):
 
@@ -474,17 +474,17 @@ def confidence_interval(importance, interval):
 				if float(importance[index][2]) < (float(interval[index][1]) - (float(interval[index][2]) * 2)):
 					
 					if float(importance[index][2]) < (float(interval[index][1]) - (float(interval[index][2]) * 3)):
-						temp_list.extend((interval[index][1], interval[index][2], '-', '***'))
-						labeled_confidence.append(temp_list)
+						current_importance.extend((interval[index][1], interval[index][2], '-', '***'))
+						labeled_confidence.append(current_importance)
 					else:
-						temp_list.extend((interval[index][1], interval[index][2], '-', '**'))
-						labeled_confidence.append(temp_list)
+						current_importance.extend((interval[index][1], interval[index][2], '-', '**'))
+						labeled_confidence.append(current_importance)
 				else:
-					temp_list.extend((interval[index][1], interval[index][2], '-', '*'))
-					labeled_confidence.append(temp_list)
+					current_importance.extend((interval[index][1], interval[index][2], '-', '*'))
+					labeled_confidence.append(current_importance)
 			else:
-				temp_list.extend((interval[index][1], interval[index][2], '-', 'n.s.'))
-				labeled_confidence.append(temp_list)
+				current_importance.extend((interval[index][1], interval[index][2], '-', 'n.s.'))
+				labeled_confidence.append(current_importance)
 	
 	return labeled_confidence
 
@@ -633,7 +633,7 @@ else:
 print 'Writing degree information to files...\n' 
 compiled_degree = combined_degree(indegree_list, outdegree_list, alldegree_list, compound_dictionary)
 outname = file_name + '.topology.txt'
-write_output('Compound_name	Compound_code	Indegree	Outdegree	Total_Edges\n', compiled_degree, outname)
+write_output('Compound_name	Compound_code	Indegree	Outdegree\n', compiled_degree, outname)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
