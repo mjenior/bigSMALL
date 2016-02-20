@@ -33,8 +33,7 @@ based on the expression of surrounding enzyme nodes.
 	# 4 files with information derived from the network:
 	#	1.  Input metabolite score (including confidence interval when applicable)
 	#	2.  Output metabolite score (including confidence interval when applicable)
-	#	3.  Composite metabolite score (including confidence interval when applicable)
-	#	4.  Description of network topology for each node (indegree, outdegree, and total edges)
+	#	3.  Description of network topology for each node (indegree and outdegree)
 
 		
 #---------------------------------------------------------------------------------------#		
@@ -307,7 +306,6 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 
 	input_dist_dict = {}
 	output_dist_dict = {}
-	composite_dist_dict = {}
 	
 	increment = 100.0 / float(iterations)
 	progress = 0.0
@@ -319,9 +317,9 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 		for index in range(0, gene_count):
 			score_dict[kos[index]] = sim_transcriptome[index]
 		
-		input_dict, output_dict, composite_dict, indegree_dict, outdegree_dict = network_dictionaries(network, score_dict)
+		input_dict, output_dict, indegree_dict, outdegree_dict = network_dictionaries(network, score_dict)
 		
-		inputscore_list, outputscore_list, compositescore_list, indegree_list, outdegree_list, alldegree_list = calc_scores(compounds, input_dict, output_dict, composite_dict, indegree_dict, outdegree_dict, compound_dict, min_importance, min_degree)
+		inputscore_list, outputscore_list, indegree_list, outdegree_list, alldegree_list = calc_scores(compounds, input_dict, output_dict, indegree_dict, outdegree_dict, compound_dict, min_importance, min_degree)
 		
 		# Make dictionaries of scores for each compound for each direction
 		for index in inputscore_list:
@@ -362,7 +360,7 @@ def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_impo
 def network_dictionaries(network, score_dictionary):
 	# need to add compound list, and change score to transcription
 
-	# Open blank dictionaries to populate with compounds and their corresponding scores depending on where they are in the given reaction
+	# Open blank dictionaries to populate with compounds and their corresponding transcription
 	input_dictionary = {}
 	output_dictionary = {}
 	indegree_dictionary = {}
@@ -574,7 +572,7 @@ with open('enzyme.lst', 'w') as enzyme_file:
 # Calculate actual importance scores for each compound in the network
 print 'Calculating compound node connectedness and metabolite scores...\n'
 input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary = network_dictionaries(reaction_graph, score_dict)
-inputscore_list, outputscore_list, indegree_list, outdegree_list, alldegree_list = calc_scores(compound_list, input_dictionary, output_dictionary, composite_dictionary, indegree_dictionary, outdegree_dictionary, compound_dictionary, min_importance, min_degree)
+inputscore_list, outputscore_list, indegree_list, outdegree_list, alldegree_list = calc_scores(compound_list, input_dictionary, output_dictionary, indegree_dictionary, outdegree_dictionary, compound_dictionary, min_importance, min_degree)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
