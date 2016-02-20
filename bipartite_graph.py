@@ -17,7 +17,7 @@ based on the expression of surrounding enzyme nodes.
 
 # Dependencies:  
 # The script itself needs to be run from from a directory containing the /support/ sub-directory
-# The only argument is a 2 column text file containing a column of KO codes with corresponding expression values
+# The only argument is a 2 column matrix text file containing a column of KO codes with corresponding expression
 # Example:
 # K00045		0
 # K03454		4492
@@ -35,7 +35,6 @@ based on the expression of surrounding enzyme nodes.
 	#	2.  Output metabolite score (including confidence interval when applicable)
 	#	3.  Description of network topology for each node (indegree and outdegree)
 
-		
 #---------------------------------------------------------------------------------------#		
 
 # Import python modules
@@ -101,9 +100,9 @@ elif iterations < 0:
 # Need to change every instance of this to transcription_dictionary()
 def transcription_dictionary(KO_file):
 	
-	seq_total = 0
-	seq_max = 0
-	score_dict = {}
+	seq_total = 0  # Total number of reads
+	seq_max = 0  # Highest single number of reads
+	transcript_dict = {}  # Dictionary for transcription
 	
 	KO_list = []
 	for index in KO_file:
@@ -111,20 +110,21 @@ def transcription_dictionary(KO_file):
 		seq_total += float(index_split[1])
 		KO_list.append(str(index_split[0]))
 		
-		if not str(index_split[0]) in score_dict.keys():
-			score_dict[str(index_split[0])] = float(index_split[1])
+		if not str(index_split[0]) in transcript_dict.keys():
+			transcript_dict[str(index_split[0])] = float(index_split[1])
+			if float(index_split[1]) > seq_max: seq_max = float(index_split[1])
 		else:
-			score_dictionary[str(index_split[0])] = score_dict[str(index_split[0])] + float(index_split[1])
-			if score_dict[str(index_split[0])] > seq_max: seq_max = score_dict[str(index_split[0])]
+			transcript_dictionary[str(index_split[0])] = transcript_dict[str(index_split[0])] + float(index_split[1])
+			if transcript_dict[str(index_split[0])] > seq_max: seq_max = transcript_dict[str(index_split[0])]
 			continue
 	
 	KO_list = list(set(KO_list))
 	
-	return score_dict, KO_list, seq_total, seq_max
+	return transcript_dict, KO_list, seq_total, seq_max
 
 
 # Translates a list of KOs to the bipartite graph
-def translateKO(input_file, ko_dict, reaction_dict):
+def translateKO(KOs, ko_dict, reaction_dict):
 
 	# Set some starting points
 	triedCountKO = 0
@@ -137,64 +137,73 @@ def translateKO(input_file, ko_dict, reaction_dict):
 	enzyme_list = []
 	network_list = []
 	
-	# Create file for reporting dictionary key errors
-	errorfile = open('key_error.log', 'w')
-	
 	# Open a file to write the bipartite graph to
 	graph = open('bipartite.graph', 'w')
 
 	# Nested loops to convert the KO list to a directed graph of input and output compounds
 	# Outside loop finds the biochemical reactions corresponding the the given KO	
 	print('Translating KEGG orthologs to bipartite enzyme-to-compound graph...\n')
-	for line in input_file:
-		current_ko = line.strip('ko:')
-		triedCountKO += 1
-			
-		try:
-			reaction_number = ko_dict[current_ko]
-		except KeyError:
-			errorString = 'WARNING: ' + str(current_ko) + ' not found in KO-to-Reaction dictionary. Omitting.\n'
-			errorfile.write(errorString)
-			excludedCountKO += 1
-			continue 
 	
-		# Inner loop translates the reaction codes to collections of input and output compounds
-		for index in reaction_number:
-			triedCountReact += 1
-			try:
-				reaction_collection = reaction_dict[index]
-			except KeyError:
-				errorString = 'WARNING: ' + str(index) + ' not found in Reaction-to-Compound dictionary. Omitting.\n'
-				errorfile.write(errorString)
-				excludedCountReact += 1
-				continue
-		
-			# The innermost loop creates two columns of input and output compounds, incorporating reversibility information
-			for x in reaction_collection:
-				totalIncludedReact += 1
-				# Split reaction input and output as well as the list of compounds with each
-				reaction_info = x.split(':')
-				input_compounds = reaction_info[0].split('|')
-				output_compounds = reaction_info[2].split('|')
-				rev = reaction_info[1].split('|')
-						
-				for input_index in input_compounds:
-					network_list.append([str(input_index), str(current_ko)])
-					graph.write(''.join([str(input_index), '\t', str(current_ko), '\n']))
-					if rev == 'R':
-						network_list.append([str(current_ko), str(input_index)])
-						graph.write(''.join([str(current_ko), '\t', str(input_index), '\n']))
-					compound_list.append(str(input_index))
-					enzyme_list.append(str(current_ko))
+	with open('bipartite.graph', 'w') as graph:
+	
+		for line in KOs:
+	
+			current_ko = line.strip('ko:')
+			triedCountKO += 1
 			
-				for output_index in output_compounds:
-					network_list.append([str(current_ko), str(output_index)])
-					graph.write(''.join([str(current_ko), '\t', str(output_index), '\n']))
-					if rev == 'R':
-						network_list.append([str(output_index), str(current_ko)])
-						graph.write(''.join([str(output_index), '\t', str(current_ko), '\n']))
-					compound_list.append(str(output_index))
-					enzyme_list.append(str(current_ko))
+			try:
+				reaction_number = ko_dict[current_ko]
+			except KeyError:
+				errorString = 'WARNING: ' + str(current_ko) + ' not found in KO-to-Reaction dictionary. Omitting.\n'
+				errorfile.write(errorString)
+				excludedCountKO += 1
+				continue 
+	
+			# Inner loop translates the reaction codes to collections of input and output compounds
+			for index in reaction_number:
+				triedCountReact += 1
+				try:
+					reaction_collection = reaction_dict[index]
+				except KeyError:
+					errorString = 'WARNING: ' + str(index) + ' not found in Reaction-to-Compound dictionary. Omitting.\n'
+					errorfile.write(errorString)
+					excludedCountReact += 1
+					continue
+		
+				# The innermost loop creates two columns of input and output compounds, incorporating reversibility information
+				for x in reaction_collection:
+				
+					totalIncludedReact += 1
+					
+					# Split reaction input and output as well as the list of compounds with each
+					reaction_info = x.split(':')
+					input_compounds = reaction_info[0].split('|')
+					output_compounds = reaction_info[2].split('|')
+					rev = reaction_info[1].split('|')
+						
+					for input_index in input_compounds:
+						network_list.append([str(input_index), str(current_ko)])
+						graph.write(''.join([str(input_index), '\t', str(current_ko), '\n']))
+						
+						if rev == 'R':
+							network_list.append([str(current_ko), str(input_index)])
+							graph.write(''.join([str(current_ko), '\t', str(input_index), '\n']))
+							
+						compound_list.append(str(input_index))
+						enzyme_list.append(str(current_ko))
+			
+			
+					for output_index in output_compounds:
+						network_list.append([str(current_ko), str(output_index)])
+						graph.write(''.join([str(current_ko), '\t', str(output_index), '\n']))
+						
+						if rev == 'R':
+							network_list.append([str(output_index), str(current_ko)])
+							graph.write(''.join([str(output_index), '\t', str(current_ko), '\n']))
+							
+						compound_list.append(str(output_index))
+						enzyme_list.append(str(current_ko))
+	
 	
 	error_string = '''KOs successfully translated to Reactions: {KO_success}
 KOs unsuccessfully translated to Reactions: {KO_failed}
@@ -203,14 +212,13 @@ Reactions successfully translated to Compounds: {Reaction_success}
 Reactions unsuccessfully translated to Compounds: {Reaction_failed}
 '''.format(KO_success = str(triedCountKO - excludedCountKO), KO_failed = str(excludedCountKO), Reaction_success = str(triedCountReact - excludedCountReact), Reaction_failed = str(excludedCountReact))
 
-	errorfile.write(error_string)
-	errorfile.close()
-
-	graph.close()
+	# Create file for reporting dictionary key errors
+	with open('key_error.log', 'w') as errorfile:
+		errorfile.write(error_string)
 	
 	network_list = [list(x) for x in set(tuple(x) for x in network_list)]  # List of unique edges (KOs and compounds)
-	compound_list = list(set(compound_list)) # List of unique compounds
-	enzyme_list = list(set(enzyme_list)) # List of unique enzymes
+	compound_list = list(set(compound_list))  # List of unique compounds
+	enzyme_list = list(set(enzyme_list))  # List of unique enzymes
 	
 	print('Done.\n')
 	
