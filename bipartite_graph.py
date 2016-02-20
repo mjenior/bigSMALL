@@ -493,7 +493,7 @@ def write_output(header, out_data, file_name):
 if file_name != 'organism':
 	print '\nImputing metabolism for ' + file_name + '\n'
 
-# Read in and create dictionary for scores
+# Read in and create dictionary for transcription
 with open(KO_input_file, 'r') as KO_file:
 	transcript_dict, KO_list, total, max = transcription_dictionary(KO_file)
 
@@ -592,8 +592,6 @@ else:
 	print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
-
-# Wrap everything up
 
 # Write network topology info to files
 print 'Writing degree information to files...\n' 
