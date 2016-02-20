@@ -110,7 +110,7 @@ def transcription_dictionary(KO_file):
 			transcript_dict[str(index_split[0])] = float(index_split[1])
 			if float(index_split[1]) > seq_max: seq_max = float(index_split[1])
 		else:
-			transcript_dictionary[str(index_split[0])] = transcript_dict[str(index_split[0])] + float(index_split[1])
+			transcript_dict[str(index_split[0])] = transcript_dict[str(index_split[0])] + float(index_split[1])
 			if transcript_dict[str(index_split[0])] > seq_max: seq_max = transcript_dict[str(index_split[0])]
 			continue
 	
@@ -139,6 +139,8 @@ def translateKO(KOs, ko_dict, reaction_dict):
 	# Nested loops to convert the KO list to a directed graph of input and output compounds
 	# Outside loop finds the biochemical reactions corresponding the the given KO	
 	print('Translating KEGG orthologs to bipartite enzyme-to-compound graph...\n')
+	
+	errorfile = open('key_error.log', 'w')
 	
 	with open('bipartite.graph', 'w') as graph:
 	
@@ -208,9 +210,8 @@ Reactions successfully translated to Compounds: {Reaction_success}
 Reactions unsuccessfully translated to Compounds: {Reaction_failed}
 '''.format(KO_success = str(triedCountKO - excludedCountKO), KO_failed = str(excludedCountKO), Reaction_success = str(triedCountReact - excludedCountReact), Reaction_failed = str(excludedCountReact))
 
-	# Create file for reporting dictionary key errors
-	with open('key_error.log', 'w') as errorfile:
-		errorfile.write(error_string)
+	errorfile.write(error_string)
+	errorfile.close()
 	
 	network_list = [list(x) for x in set(tuple(x) for x in network_list)]  # List of unique edges (KOs and compounds)
 	compound_list = list(set(compound_list))  # List of unique compounds
@@ -297,7 +298,6 @@ def network_dictionaries(network, transcript_dictionary):
 		except KeyError:
 			indegree = 0
 		all_degree_dictionary[index] = [index, indegree, outdegree]
-	
 		
 	return all_transcript_dictionary, all_degree_dictionary
 
@@ -310,26 +310,23 @@ def calculate_importance(transcript_dict, degree_dict, compound_dict, min_score,
 	outputscore_list = []
 	degree_list = []
 		
-	# Calculate cumulative scores for all compounds as inputs, outputs, or both
+	# Calculate cumulative scores for all compounds as inputs or outputs
 	for index in compound_dict.keys():
 		
+		compound = compound_dict[index]
+		
 		try:
-			compound = compound_dict[index]
-		except KeyError:	
-			compound = index
-			
+			indegree = int(degree_dict[index][1])
+		except KeyError:
+			indegree = 0		
 		try:
-			outdegree = int(outdegree_dict[index])
+			outdegree = int(degree_dict[index][2])
 		except KeyError:
 			outdegree = 0	
-		try:
-			indegree = int(indegree_dict[index])
-		except KeyError:
-			indegree = 0	
 			
 		
 		try:
-			input_scores = [int(x) for x in input_score_dict[index]]
+			input_scores = [int(x) for x in transcript_dict[index][1]]
 		except KeyError:
 			input_scores = [0]
 		if outdegree == 0:
@@ -343,7 +340,7 @@ def calculate_importance(transcript_dict, degree_dict, compound_dict, min_score,
 		
 		
 		try:
-			output_scores = [int(x) for x in output_score_dict[index]]
+			output_scores = [int(x) for x in transcript_dict[index][2]]
 		except KeyError:
 			output_scores = [0]
 		if indegree == 0:
@@ -561,8 +558,8 @@ with open('enzyme.lst', 'w') as enzyme_file:
 			
 # Calculate actual importance scores for each compound in the network
 print 'Calculating compound node connectedness and metabolite scores...\n'
-transcript_dictionary, degree_dictionary = network_dictionaries(reaction_graph, transcript_dict)
-inputscore_list, outputscore_list, degree_list = calculate_importance(transcript_dictionary, degree_dictionary , compound_dictionary, min_importance, min_degree)
+transcript_dict, degree_dict = network_dictionaries(reaction_graph, transcript_dict)
+inputscore_list, outputscore_list, degree_list = calculate_importance(transcript_dict, degree_dict, compound_dictionary, min_importance, min_degree)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
@@ -598,9 +595,8 @@ else:
 
 # Write network topology info to files
 print 'Writing degree information to files...\n' 
-compiled_degree = combined_degree(indegree_list, outdegree_list, alldegree_list, compound_dictionary)
 outname = file_name + '.topology.txt'
-write_output('Compound_name	Compound_code	Indegree	Outdegree\n', compiled_degree, outname)
+write_output('Compound_name	Compound_code	Indegree	Outdegree\n', degree_list, outname)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
