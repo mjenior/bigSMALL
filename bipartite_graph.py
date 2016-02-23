@@ -409,13 +409,13 @@ def confidence_interval(score_dict, interval_lst):
 				if current_score > (current_mean + (current_std_dev * 2)):
 				
 					if current_score > (current_mean + (current_std_dev * 3)):
-						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '+', '***'])		
+						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'above', '***'])		
 					else:
-						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '+', '**'])
+						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'above', '**'])
 				else:
-					labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '+', '*'])
+					labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'above', '*'])
 			else:
-				labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '+', 'n.s.'])
+				labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'above', 'n.s.'])
 		
 		elif current_score < current_mean:
 		
@@ -424,16 +424,16 @@ def confidence_interval(score_dict, interval_lst):
 				if current_score < (current_mean - (current_std_dev * 2)):
 				
 					if current_score < (current_mean - (current_std_dev * 3)):
-						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '-', '***'])		
+						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'below', '***'])		
 					else:
-						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '-', '**'])
+						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'below', '**'])
 				else:
-					labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '-', '*'])
+					labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'below', '*'])
 			else:
-				labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '-', 'n.s.'])
+				labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'below', 'n.s.'])
 	
 		else:
-			labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '=', 'NA'])
+			labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'equal', 'NA'])
 			
 	return labeled_confidence
 
