@@ -296,14 +296,18 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 		input_transcription = compound_transcript_dict[compound][0]
 		output_transcription = compound_transcript_dict[compound][1]	
 		
-		if outdegree == 0:
-			input_score = 0
+		if outdegree == 0.0:
+			input_score = 0.0
 		else:
 			input_score = input_transcription / outdegree
-		if indegree == 0:
-			output_score = 0
+		if indegree == 0.0:
+			output_score = 0.0
+			input_score = input_score + (input_score / 2)
 		else:
 			output_score = output_transcription / indegree
+		
+		input_score = float("%.3f" % input_score)
+		output_score = float("%.3f" % output_score)
 			
 		if input_score >= min_score:
 			input_score_dict[compound].extend((compound_name, input_score))
