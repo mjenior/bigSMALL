@@ -17,7 +17,7 @@ based on the expression of surrounding enzyme nodes.
 
 # Dependencies:  
 # The script itself needs to be run from from a directory containing the /support/ sub-directory
-# The only argument is a 2 column text file containing a column of KO codes with corresponding expression values
+# The only argument is a 2 column matrix text file containing a column of KO codes with corresponding expression
 # Example:
 # K00045		0
 # K03454		4492
@@ -33,10 +33,8 @@ based on the expression of surrounding enzyme nodes.
 	# 4 files with information derived from the network:
 	#	1.  Input metabolite score (including confidence interval when applicable)
 	#	2.  Output metabolite score (including confidence interval when applicable)
-	#	3.  Composite metabolite score (including confidence interval when applicable)
-	#	4.  Description of network topology for each node (indegree, outdegree, and total edges)
+	#	3.  Description of network topology for each node (indegree and outdegree)
 
-		
 #---------------------------------------------------------------------------------------#		
 
 # Import python modules
@@ -58,7 +56,7 @@ start = time.time()
 
 # Define arguments
 parser = argparse.ArgumentParser(description='Generate bipartite metabolic models and calculates importance of substrate nodes based on gene expression.')
-parser.add_argument('expression_file')
+parser.add_argument('input_file')
 parser.add_argument('--name', default='organism', help='Organism or other name for KO+expression file (default is organism)')
 parser.add_argument('--min', default=0, help='minimum importance value to report')
 parser.add_argument('--degree', default=0, help='minimum degree value to report')
@@ -66,9 +64,9 @@ parser.add_argument('--iters', default=1, help='iterations for random distributi
 args = parser.parse_args()
 
 # Assign variables
-KO_input_file = str(args.expression_file)
+KO_input_file = str(args.input_file)
 file_name = str(args.name)
-min_importance = int(args.min)
+min_score = int(args.min)
 min_degree = int(args.degree)
 iterations = int(args.iters)
 
@@ -81,7 +79,7 @@ if KO_input_file == 'input_file':
 elif os.stat(KO_input_file).st_size == 0:
 	print('Empty input file provided. Aborting.')
 	sys.exit()
-elif min_importance < 0:
+elif min_score < 0:
 	print 'Invalid importance minimum. Aborting.'
 	sys.exit()
 elif min_degree < 0:
@@ -95,32 +93,66 @@ elif iterations < 0:
 
 # Define functions
 
-# Create a dictionary for transcript value associated with its KO
-def score_dictionary(KO_file):
-	
-	seq_total = 0
-	seq_max = 0
-	score_dictionary = {}
-	KO_list = []
-	for index in KO_file:
-		index_split = index.split()
-		seq_total += float(index_split[1])
-		KO_list.append(str(index_split[0]))
+# Function to write lists to files	
+def write_list(header, out_lst, file_name):
+
+	with open(file_name, 'w') as out_file: 
 		
-		if not str(index_split[0]) in score_dictionary.keys():
-			score_dictionary[str(index_split[0])] = float(index_split[1])
+		if not header == 'none': out_file.write(header)
+			
+		for index in out_lst:
+			index = [str(x) for x in index]
+			index[-1] = str(index[-1]) + '\n'
+			out_file.write('\t'.join(index))
+			
+
+# Function to write dictionaries to files	
+def write_dictionary(header, out_dict, file_name):
+
+	all_keys = out_dict.keys()
+	
+	with open(file_name, 'w') as out_file: 
+		
+		if not header == 'none': out_file.write(header)
+			
+		for index in all_keys:
+			elements = out_dict[index]
+			elements.insert(0, index)
+			elements = [str(x) for x in elements]
+			elements[-1] = elements[-1] + '\n'
+			out_file.write('\t'.join(elements))
+
+
+# Create a dictionary for transcript value associated with its KO
+def transcription_dictionary(KO_file):
+	
+	seq_total = 0  # Total number of reads
+	seq_max = 0  # Highest single number of reads
+	transcript_dict = {}  # Dictionary for transcription
+	transcript_distribution_lst = []
+	
+	for line in KO_file:
+		entry = line.split()
+		
+		ko = str(entry[0])
+		expression = float(entry[1])
+		
+		seq_total += expression
+		
+		if not ko in transcript_dict.keys():
+			transcript_dict[ko] = expression
+			transcript_distribution_lst.append(expression)
 		else:
-			score_dictionary[str(index_split[0])] = score_dictionary[str(index_split[0])] + float(index_split[1])
-			if score_dictionary[str(index_split[0])] > seq_max: seq_max = score_dictionary[str(index_split[0])]
-			continue
+			transcript_dict[ko] = transcript_dict[ko] + expression
+			transcript_distribution_lst.append(transcript_dict[ko])
+		
+		if transcript_dict[ko] > seq_max: seq_max = transcript_dict[ko]
 	
-	KO_list = list(set(KO_list))
-	
-	return score_dictionary, KO_list, seq_total, seq_max
+	return transcript_dict, seq_total, seq_max, transcript_distribution_lst
 
 
 # Translates a list of KOs to the bipartite graph
-def translateKO(input_file, ko_dict, reaction_dict):
+def network_dictionaries(KOs, ko_dict, reaction_dict):
 
 	# Set some starting points
 	triedCountKO = 0
@@ -129,417 +161,277 @@ def translateKO(input_file, ko_dict, reaction_dict):
 	excludedCountReact = 0
 	totalIncludedReact = 0
 	
-	compound_list = []
-	enzyme_list = []
 	network_list = []
+	compound_lst = []
 	
-	# Create file for reporting dictionary key errors
-	errorfile = open('key_error.log', 'w')
-	
-	# Open a file to write the bipartite graph to
-	graph = open('bipartite.graph', 'w')
+	ko_input_dict = {}
+	ko_output_dict = {}
 
 	# Nested loops to convert the KO list to a directed graph of input and output compounds
 	# Outside loop finds the biochemical reactions corresponding the the given KO	
 	print('Translating KEGG orthologs to bipartite enzyme-to-compound graph...\n')
-	for line in input_file:
-		current_ko = line.strip('ko:')
-		triedCountKO += 1
-			
-		try:
-			reaction_number = ko_dict[current_ko]
-		except KeyError:
-			errorString = 'WARNING: ' + str(current_ko) + ' not found in KO-to-Reaction dictionary. Omitting.\n'
-			errorfile.write(errorString)
-			excludedCountKO += 1
-			continue 
 	
-		# Inner loop translates the reaction codes to collections of input and output compounds
-		for index in reaction_number:
-			triedCountReact += 1
+	
+	with open('key_error.log', 'w') as errorfile:
+	
+		for line in KOs:
+	
+			current_ko = line.strip('ko:')
+			triedCountKO += 1
+			
+			if not current_ko in ko_input_dict:
+				ko_input_dict[current_ko] = []
+				ko_output_dict[current_ko] = []
+			
 			try:
-				reaction_collection = reaction_dict[index]
+				reaction_number = ko_dict[current_ko]
 			except KeyError:
-				errorString = 'WARNING: ' + str(index) + ' not found in Reaction-to-Compound dictionary. Omitting.\n'
+				errorString = 'WARNING: ' + str(current_ko) + ' not found in KO-to-Reaction dictionary. Omitting.\n'
 				errorfile.write(errorString)
-				excludedCountReact += 1
-				continue
-		
-			# The innermost loop creates two columns of input and output compounds, incorporating reversibility information
-			for x in reaction_collection:
-				totalIncludedReact += 1
-				# Split reaction input and output as well as the list of compounds with each
-				reaction_info = x.split(':')
-				input_compounds = reaction_info[0].split('|')
-				output_compounds = reaction_info[2].split('|')
-				rev = reaction_info[1].split('|')
-						
-				for input_index in input_compounds:
-					network_list.append([str(input_index), str(current_ko)])
-					graph.write(''.join([str(input_index), '\t', str(current_ko), '\n']))
-					if rev == 'R':
-						network_list.append([str(current_ko), str(input_index)])
-						graph.write(''.join([str(current_ko), '\t', str(input_index), '\n']))
-					compound_list.append(str(input_index))
-					enzyme_list.append(str(current_ko))
-			
-				for output_index in output_compounds:
-					network_list.append([str(current_ko), str(output_index)])
-					graph.write(''.join([str(current_ko), '\t', str(output_index), '\n']))
-					if rev == 'R':
-						network_list.append([str(output_index), str(current_ko)])
-						graph.write(''.join([str(output_index), '\t', str(current_ko), '\n']))
-					compound_list.append(str(output_index))
-					enzyme_list.append(str(current_ko))
+				excludedCountKO += 1
+				continue 
 	
-	error_string = '''KOs successfully translated to Reactions: {KO_success}
+			# Inner loop translates the reaction codes to collections of input and output compounds
+			for index in reaction_number:
+				triedCountReact += 1
+				try:
+					reaction_collection = reaction_dict[index]
+				except KeyError:
+					errorString = 'WARNING: ' + str(index) + ' not found in Reaction-to-Compound dictionary. Omitting.\n'
+					errorfile.write(errorString)
+					excludedCountReact += 1
+					continue
+		
+				# The innermost loop creates two columns of input and output compounds, incorporating reversibility information
+				for x in reaction_collection:
+				
+					totalIncludedReact += 1
+					
+					# Split reaction input and output as well as the list of compounds with each
+					reaction_info = x.split(':')
+					input_compounds = reaction_info[0].split('|')
+					output_compounds = reaction_info[2].split('|')
+					rev = reaction_info[1].split('|')
+						
+					for input_index in input_compounds:
+						network_list.append([str(input_index), str(current_ko)])
+						ko_input_dict[current_ko].append(str(input_index))
+						
+						if rev == 'R':
+							network_list.append([str(current_ko), str(input_index)])
+							ko_output_dict[current_ko].append(str(input_index))	
+							
+						compound_lst.append(str(input_index))		
+			
+					for output_index in output_compounds:
+						network_list.append([str(current_ko), str(output_index)])
+						ko_output_dict[current_ko].append(str(output_index))
+						
+						if rev == 'R':
+							network_list.append([str(output_index), str(current_ko)])
+							ko_input_dict[current_ko].append(str(output_index))
+							
+						compound_lst.append(str(output_index))
+								
+		error_string = '''KOs successfully translated to Reactions: {KO_success}
 KOs unsuccessfully translated to Reactions: {KO_failed}
 
 Reactions successfully translated to Compounds: {Reaction_success}
 Reactions unsuccessfully translated to Compounds: {Reaction_failed}
 '''.format(KO_success = str(triedCountKO - excludedCountKO), KO_failed = str(excludedCountKO), Reaction_success = str(triedCountReact - excludedCountReact), Reaction_failed = str(excludedCountReact))
-
-	errorfile.write(error_string)
-	errorfile.close()
-
-	graph.close()
+		errorfile.write(error_string)
 	
 	network_list = [list(x) for x in set(tuple(x) for x in network_list)]  # List of unique edges (KOs and compounds)
-	compound_list = list(set(compound_list)) # List of unique compounds
-	enzyme_list = list(set(enzyme_list)) # List of unique enzymes
+	compound_lst = list(set(compound_lst))
 	
 	print('Done.\n')
 	
-	return network_list, compound_list, enzyme_list
+	return network_list, ko_input_dict, ko_output_dict, compound_lst
+
+
+# Compile surrounding input and output node transcripts into a dictionary, same for degree information
+def compile_scores(transcript_dictionary, ko_input_dict, ko_output_dict, compound_lst, KO_lst):
+
+	compound_transcript_dict = {}
+	compound_degree_dict = {}
+	for compound in compound_lst:
+		compound_transcript_dict[compound] = [0, 0] # [input, output]
+		compound_degree_dict[compound] = [0, 0] # [indegree, outdegree]
+		
+	for ko in KO_lst:
+	
+		transcription = transcript_dictionary[ko]
+		
+		input_compounds = ko_input_dict[ko]
+		output_compounds = ko_output_dict[ko]
+		
+		for compound in input_compounds:
+			compound_transcript_dict[compound][0] = compound_transcript_dict[compound][0] + transcription
+			compound_degree_dict[compound][1] = compound_degree_dict[compound][1] + 1
+		
+		for compound in output_compounds:
+			compound_transcript_dict[compound][1] = compound_transcript_dict[compound][1] + transcription
+			compound_degree_dict[compound][0] = compound_degree_dict[compound][0] + 1
+	
+	return compound_transcript_dict, compound_degree_dict
 
 
 # Calculate input and output scores and well as degree of each compound node
-def calc_scores(compound_list, input_score_dict, output_score_dict, composite_score_dict, indegree_dict, outdegree_dict, compound_dict, min_score, min_deg):
+def calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dict, min_score, min_degree, compound_lst):
 	
-	# Open blank lists for all calculated values
-	inputscore_list = []
-	outputscore_list = []
-	compositescore_list = []
-	indegree_list = []
-	outdegree_list = []
-	alldegree_list = []
+	input_score_dict = {}
+	output_score_dict = {}
+	degree_dict = {}
+		
+	# Calculate cumulative scores for all compounds as inputs or outputs
+	for compound in compound_lst:
 	
-	# Calculate cumulative scores for all compounds as inputs, outputs, or both
-	for index in compound_list:
+		input_score_dict[compound] = []
+		output_score_dict[compound] = []
+		degree_dict[compound] = []
 		
-		try:
-			compound = compound_dict[index]
-		except KeyError:	
-			compound = index
-			
-		try:
-			outdegree = int(outdegree_dict[index])
-		except KeyError:
-			outdegree = 0	
-		try:
-			indegree = int(indegree_dict[index])
-		except KeyError:
-			indegree = 0	
-			
+		compound_name = compound_name_dict[compound]
+		indegree = compound_degree_dict[compound][0]
+		outdegree = compound_degree_dict[compound][1]
+		input_transcription = compound_transcript_dict[compound][0]
+		output_transcription = compound_transcript_dict[compound][1]	
 		
-		try:
-			input_scores = [int(x) for x in input_score_dict[index]]
-		except KeyError:
-			input_scores = [0]
 		if outdegree == 0:
-			final_score = 0
-		elif indegree == 0:
-			final_score = float(sum(input_scores) * (1 + outdegree))
+			input_score = 0
 		else:
-			final_score = float(sum(input_scores) / outdegree)				
-		if final_score >= min_score:
-			inputscore_list.append([compound, index, str(final_score)])
-		
-		
-		try:
-			output_scores = [int(x) for x in output_score_dict[index]]
-		except KeyError:
-			output_scores = [0]
+			input_score = input_transcription / outdegree
 		if indegree == 0:
-			final_score = 0
-		elif outdegree == 0:
-			final_score = float(sum(output_scores) * (1 + indegree))
+			output_score = 0
 		else:
-			final_score = float(sum(output_scores) / indegree)	
-		if final_score >= min_score:
-			outputscore_list.append([compound, index, str(final_score)])
-
-
-		try:
-			composite_scores = [int(x) for x in composite_score_dict[index]]
-		except KeyError:
-			composite_scores = [0]
-		composite_degree = indegree + outdegree
-		if composite_degree == 0:
-			final_score = 0
-		else:
-			final_score = float(sum(composite_scores) / composite_degree)
-		if final_score >= min_score:
-			compositescore_list.append([compound, index, str(final_score)])	
+			output_score = output_transcription / indegree
 			
+		if input_score >= min_score:
+			input_score_dict[compound].extend((compound_name, input_score))
+		if output_score >= min_score:
+			output_score_dict[compound].extend((compound_name, output_score))
 		
-		if indegree >= min_deg:
-			indegree_list.append([compound, index, str(indegree)])
-		if outdegree >= min_deg:
-			outdegree_list.append([compound, index, str(outdegree)])
-		if composite_degree >= min_deg:
-			alldegree_list.append([compound, index, str(composite_degree)])
-				
-				
-	return inputscore_list, outputscore_list, compositescore_list, indegree_list, outdegree_list, alldegree_list
+		if indegree >= min_degree and outdegree >= min_degree:
+			degree_dict[compound].extend((compound_name, indegree, outdegree))	
+					
+	return input_score_dict, output_score_dict, degree_dict
 	
-
-# Function to write data to output files	
-def write_output(header, out_data, file_name):
-
-	with open(file_name, 'w') as outfile: 
-		
-		outfile.write(header)
-			
-		for index in out_data:
-			index = [str(x) for x in index]
-			index[-1] = str(index[-1]) + '\n'
-			outfile.write('\t'.join(index))
-
-
+	
 # Perform iterative Monte Carlo simulation to create confidence interval for compound importance values
-def monte_carlo_sim(network, kos, iterations, compounds, compound_dict, min_importance, min_degree, seq_total, seq_max):
+def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations, compound_name_dict, min_score, min_degree, seq_total, seq_max, compound_lst, transcript_distribution_lst):
 	
 	gene_count = len(kos)
 	probability = 1.0 / gene_count
 	
-	distribution = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
-	distribution = [i for i in distribution if i < seq_max] # screen for transcript mapping greater than largest value actually sequenced
-
-	input_dist_dict = {}
-	output_dist_dict = {}
-	composite_dist_dict = {}
+	# Generates a random negative binomial distribution to sample from, way too high for my expression values
+	#distribution = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
+	#distribution = [i for i in distribution if i < seq_max]  # screen for transcript mapping greater than largest value actually sequenced
 	
-	increment = 100.0 / float(iterations)
+	input_distribution_dict = {}
+	output_distribution_dict = {}
+	for compound in compound_lst:
+		input_distribution_dict[compound] = []
+		output_distribution_dict[compound] = []
+	
+	increment = 100.0 / float(iterations + len(compound_lst))
 	progress = 0.0
+	sys.stdout.write('\rProgress: ' + str(progress) + '%')
+	sys.stdout.flush()
+	
 	for current in range(0, iterations):
 			
-		sim_transcriptome = random.sample(distribution, gene_count)
-	
-		score_dict = {}
+		#sim_transcriptome = random.sample(distribution, gene_count)
+		sim_transcriptome = random.sample(transcript_distribution_lst, gene_count)
+		
+		sim_transcript_dict = {}
 		for index in range(0, gene_count):
-			score_dict[kos[index]] = sim_transcriptome[index]
+			sim_transcript_dict[kos[index]] = sim_transcriptome[index]
 		
-		input_dict, output_dict, composite_dict, indegree_dict, outdegree_dict = network_dictionaries(network, score_dict)
-		
-		inputscore_list, outputscore_list, compositescore_list, indegree_list, outdegree_list, alldegree_list = calc_scores(compounds, input_dict, output_dict, composite_dict, indegree_dict, outdegree_dict, compound_dict, min_importance, min_degree)
+		substrate_dict, degree_dict = compile_scores(sim_transcript_dict, ko_input_dict, ko_output_dict, compound_lst, kos)
+		input_score_dict, output_score_dict, degree_dict = calculate_score(substrate_dict, degree_dict, compound_name_dict, min_score, min_degree, compound_lst)
 		
 		# Make dictionaries of scores for each compound for each direction
-		for index in inputscore_list:
-			if not index[1] in input_dist_dict.keys():			
-				input_dist_dict[index[1]] = [float(index[2])]
-			else:
-				input_dist_dict[index[1]].append(float(index[2]))
-		
-		for index in outputscore_list:
-			if not index[1] in output_dist_dict.keys():			
-				output_dist_dict[index[1]] = [float(index[2])]
-			else:
-				output_dist_dict[index[1]].append(float(index[2]))
-				
-		for index in compositescore_list:
-			if not index[1] in composite_dist_dict.keys():			
-				composite_dist_dict[index[1]] = [float(index[2])]
-			else:
-				composite_dist_dict[index[1]].append(float(index[2]))
+		for compound in compound_lst:
+			input_distribution_dict[compound].append(input_score_dict[compound][-1])
+			output_distribution_dict[compound].append(output_score_dict[compound][-1])
 		
 		progress += increment
+		progress = float("%.3f" % progress)
+		sys.stdout.write('\rProgress: ' + str(progress) + '%')
+		sys.stdout.flush()
+			
+	# Compile the scores for each compound and take the mean and standard deviation
+	input_interval_lst = []
+	output_interval_lst = []
+	for compound in compound_lst:
+
+		input_current_mean = float("%.3f" % (numpy.mean(input_distribution_dict[compound])))
+		input_current_std = float("%.3f" % (numpy.std(input_distribution_dict[compound])))
+		input_interval_lst.append([compound, input_current_mean, input_current_std])
+
+		output_current_mean = float("%.3f" % (numpy.mean(output_distribution_dict[compound])))
+		output_current_std = float("%.3f" % (numpy.std(output_distribution_dict[compound])))
+		output_interval_lst.append([compound, output_current_mean, output_current_std])
+		
+		progress += increment
+		progress = float("%.3f" % progress)
 		sys.stdout.write('\rProgress: ' + str(progress) + '%')
 		sys.stdout.flush()
 	
-	print '\n'
-		
-	# Compile the scores for each compound and take the mean and standard deviation
-	input_interval_list = []
-	output_interval_list = []
-	composite_interval_list = []
-	for index in compounds:
-
-		input_current_mean = float("%.3f" % (numpy.mean(input_dist_dict[index])))
-		input_current_std = float("%.3f" % (numpy.std(input_dist_dict[index])))
-		input_interval_list.append([index, input_current_mean, input_current_std])
-
-		output_current_mean = float("%.3f" % (numpy.mean(output_dist_dict[index])))
-		output_current_std = float("%.3f" % (numpy.std(output_dist_dict[index])))
-		output_interval_list.append([index, output_current_mean, output_current_std])
-
-		composite_current_mean = numpy.mean(composite_dist_dict[index])
-		composite_current_mean = float("%.3f" % composite_current_mean)
-		composite_current_std = numpy.std(composite_dist_dict[index])
-		composite_current_std = float("%.3f" % composite_current_std)
-		composite_interval_list.append([index, composite_current_mean, composite_current_std])
-
-	return input_interval_list, output_interval_list, composite_interval_list
-
-
-def network_dictionaries(network, score_dictionary):
-
-	# Open blank dictionaries to populate with compounds and their corresponding scores depending on where they are in the given reaction
-	input_dictionary = {}
-	output_dictionary = {}
-	composite_dictionary = {}
-
-	# indegree and outdegree are immutable metrics that don't rely on the transcript density and will say something about the network strictly based on topology
-	indegree_dictionary = {}
-	outdegree_dictionary = {}
-
-	for edge_info in network:
+	sys.stdout.write('\rProgress: 100%               ')
+	sys.stdout.flush()
+	print('\n')
 	
-		# Output, 'C' is useful because it is at the beginning of every compound code
-		if edge_info[1][0] == 'C':
+	return input_interval_lst, output_interval_lst
+
+
+# Assesses measured values against confidence interval from Monte Carlo simulation 
+def confidence_interval(score_dict, interval_lst):
+
+	labeled_confidence = []
+
+	for index in interval_lst:
+	
+		current_compound = index[0]
+		current_std_dev = index[1]
+		current_mean = index[2]
 		
-			# Fill output score dictionary
-			if not edge_info[1] in output_dictionary.keys():
-				try:
-					temp_score = score_dictionary[edge_info[0]]
-				except KeyError:
-					temp_score = 0
+		current_score = score_dict[current_compound][1]
+		current_name = score_dict[current_compound][0]
 		
-				output_dictionary[edge_info[1]] = [temp_score]
-			else:
-				output_dictionary[edge_info[1]].append(score_dictionary[edge_info[0]])
-			
-			# Composite	(first half)
-			if not edge_info[1] in composite_dictionary.keys():
-				try:
-					temp_score = score_dictionary[edge_info[0]]
-				except KeyError:
-					temp_score = 0
+		if current_score > current_mean:
 		
-				composite_dictionary[edge_info[1]] = [temp_score]
-			else:
-				composite_dictionary[edge_info[1]].append(score_dictionary[edge_info[0]])
+			if current_score > (current_mean + current_std_dev):
 			
-			# Fill indegree dictionary	
-			if not edge_info[1] in indegree_dictionary.keys():
-				indegree_dictionary[edge_info[1]] = 1
-			else:	
-				indegree_dictionary[edge_info[1]] = indegree_dictionary[edge_info[1]] + 1
-			
-			continue 
+				if current_score > (current_mean + (current_std_dev * 2)):
 				
-				
-		# Input
-		if edge_info[0][0] == 'C':
-		
-			if not edge_info[0] in input_dictionary.keys():
-				try:
-					temp_score = score_dictionary[edge_info[1]]
-				except KeyError:
-					temp_score = 0
-
-				input_dictionary[edge_info[0]] = [temp_score]
-			
-			else:
-				input_dictionary[edge_info[0]].append(score_dictionary[edge_info[1]])
-		
-			# Composite	(second half)
-			if not edge_info[0] in composite_dictionary.keys():
-				try:
-					temp_score = score_dictionary[edge_info[1]]
-				except KeyError:
-					temp_score = 0
-				
-				composite_dictionary[edge_info[0]] = [temp_score]
-			else:
-				composite_dictionary[edge_info[0]].append(score_dictionary[edge_info[1]])
-			
-			# Fill outdegree dictionary
-			if not edge_info[0] in outdegree_dictionary.keys():
-				outdegree_dictionary[edge_info[0]] = 1
-			else:	
-				outdegree_dictionary[edge_info[0]] = outdegree_dictionary[edge_info[0]] + 1
-		
-
-	return input_dictionary, output_dictionary, composite_dictionary, indegree_dictionary, outdegree_dictionary
-
-
-def find_sig(importance, interval):
-
-	labeled_importance = []
-
-	for index in range(0, len(importance)):
-		
-		temp_list = importance[index]
-		
-		if float(importance[index][2]) > float(interval[index][1]):
-		
-			if float(importance[index][2]) > (float(interval[index][1]) + float(interval[index][2])):
-			
-				if float(importance[index][2]) > (float(interval[index][1]) + (float(interval[index][2]) * 2)):
-				
-					if float(importance[index][2]) > (float(interval[index][1]) + (float(interval[index][2]) * 3)):
-						temp_list.extend((interval[index][1], interval[index][2], '+', '***'))
-						labeled_importance.append(temp_list)		
+					if current_score > (current_mean + (current_std_dev * 3)):
+						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '+', '***'])		
 					else:
-						temp_list.extend((interval[index][1], interval[index][2], '+', '**'))
-						labeled_importance.append(temp_list)
+						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '+', '**'])
 				else:
-					temp_list.extend((interval[index][1], interval[index][2], '+', '*'))
-					labeled_importance.append(temp_list)
+					labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '+', '*'])
 			else:
-				temp_list.extend((interval[index][1], interval[index][2], '+', 'n.s.'))
-				labeled_importance.append(temp_list)
+				labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '+', 'n.s.'])
+		
+		elif current_score < current_mean:
+		
+			if current_score < (current_mean - current_std_dev):
+			
+				if current_score < (current_mean - (current_std_dev * 2)):
 				
-		elif float(importance[index][2]) < float(interval[index][1]):
-
-			if float(importance[index][2]) < (float(interval[index][1]) - float(interval[index][2])):
-			
-				if float(importance[index][2]) < (float(interval[index][1]) - (float(interval[index][2]) * 2)):
-					
-					if float(importance[index][2]) < (float(interval[index][1]) - (float(interval[index][2]) * 3)):
-						temp_list.extend((interval[index][1], interval[index][2], '-', '***'))
-						labeled_importance.append(temp_list)
+					if current_score < (current_mean - (current_std_dev * 3)):
+						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '-', '***'])		
 					else:
-						temp_list.extend((interval[index][1], interval[index][2], '-', '**'))
-						labeled_importance.append(temp_list)
+						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '-', '**'])
 				else:
-					temp_list.extend((interval[index][1], interval[index][2], '-', '*'))
-					labeled_importance.append(temp_list)
+					labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '-', '*'])
 			else:
-				temp_list.extend((interval[index][1], interval[index][2], '-', 'n.s.'))
-				labeled_importance.append(temp_list)
+				labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '-', 'n.s.'])
 	
-	return labeled_importance
-
-
-def combined_degree(in_list, out_list, all_list, compound_dict):
-	
-	in_dict = {}
-	for index in in_list:
-		in_dict[index[1]] = int(index[2])
-	out_dict = {}
-	for index in out_list:
-		out_dict[index[1]] = int(index[2])
-	all_dict = {}
-	compound_list = []
-	for index in all_list:
-		all_dict[index[1]] = int(index[2])
-	
-	compiled = []
-	for index in all_dict.keys():
-		try:
-			indegree = in_dict[index]
-		except KeyError:
-			indegree = 0
-		try:
-			outdegree = out_dict[index]
-		except KeyError:
-			outdegree = 0
+		else:
+			labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, '=', 'NA'])
 			
-		compiled.append([compound_dict[index][0], index, indegree, outdegree, all_dict[index]])
-	
-	return compiled
+	return labeled_confidence
 
 
 ##########################################################################################		
@@ -549,12 +441,14 @@ def combined_degree(in_list, out_list, all_list, compound_dict):
 ##########################################################################################		
 
 
+# Print organism name to screen to track progress in case of loop
 if file_name != 'organism':
 	print '\nImputing metabolism for ' + file_name + '\n'
 
-# Read in and create dictionary for scores
+# Read in and create dictionary for expression
 with open(KO_input_file, 'r') as KO_file:
-	score_dict, KO_list, total, max = score_dictionary(KO_file)
+	transcript_dict, total, max, transcript_distribution_lst = transcription_dictionary(KO_file)
+KO_lst = transcript_dict.keys()
 
 #---------------------------------------------------------------------------------------#		
 
@@ -571,7 +465,6 @@ os.chdir(directory)
 #---------------------------------------------------------------------------------------#		
 
 # Write parameters to a file
-
 with open('parameters.txt', 'w') as parameter_file:
 	outputString = '''User Defined Parameters
 KO expression file: {ko}
@@ -579,14 +472,14 @@ Graph name: {name}
 Minimum compound importance: {imp}
 Minimum edges per node: {deg}
 Monte Carlo simulation iterations: {iter}
-'''.format(ko=str(KO_input_file), name=str(file_name), imp=str(min_importance), deg=str(min_degree), iter=str(iterations))
+'''.format(ko=str(KO_input_file), name=str(file_name), imp=str(min_score), deg=str(min_degree), iter=str(iterations))
 	parameter_file.write(outputString)
 
 #---------------------------------------------------------------------------------------#		
 
 # Create a dictionary of KO expression scores and load KEGG dictionaries
-
 print('\nReading in KEGG dictionaries...\n')
+
 # Read in pickled KO to reaction dictionary
 ko_reactionpkl_path = script_path + '/support/ko_reaction.pkl'
 ko_dictionary = pickle.load(open(ko_reactionpkl_path, 'rb'))
@@ -598,27 +491,29 @@ reaction_dictionary = pickle.load(open(reaction_mapformulapkl_path, 'rb'))
 
 # Read in pickled compound name dictionary
 compoundpkl_path = script_path + '/support/compound.pkl'
-compound_dictionary = pickle.load(open(compoundpkl_path, 'rb'))
+compound_name_dictionary = pickle.load(open(compoundpkl_path, 'rb'))
 print('Done.\n')
 
 #---------------------------------------------------------------------------------------#	
 
 # Call translate function and separate output lists
-reaction_graph, compound_list, enzyme_list = translateKO(KO_list, ko_dictionary, reaction_dictionary)
+reaction_graph, ko_input_dict, ko_output_dict, compound_lst = network_dictionaries(KO_lst, ko_dictionary, reaction_dictionary)
+
+#---------------------------------------------------------------------------------------#	
 
 # Write compounds and enzymes to files
-with open('compound.lst', 'w') as compound_file:
-	for index in compound_list:
-		compound_file.write(''.join([index, '\n']))
+write_list('none', compound_lst, 'compound.lst')
+write_list('none', KO_lst, 'enzyme.lst')
 
-with open('enzyme.lst', 'w') as enzyme_file:
-	for index in enzyme_list:
-		enzyme_file.write(''.join([index, '\n']))
-			
+# Write network to a list for use in Neo4j or R
+write_list('none', reaction_graph, 'bipartite_graph.txt')
+
+#---------------------------------------------------------------------------------------#	
+
 # Calculate actual importance scores for each compound in the network
 print 'Calculating compound node connectedness and metabolite scores...\n'
-input_dictionary, output_dictionary, composite_dictionary, indegree_dictionary, outdegree_dictionary = network_dictionaries(reaction_graph, score_dict)
-inputscore_list, outputscore_list, compositescore_list, indegree_list, outdegree_list, alldegree_list = calc_scores(compound_list, input_dictionary, output_dictionary, composite_dictionary, indegree_dictionary, outdegree_dictionary, compound_dictionary, min_importance, min_degree)
+compound_transcript_dict, compound_degree_dict = compile_scores(transcript_dict, ko_input_dict, ko_output_dict, compound_lst, KO_lst)
+input_score_dict, output_score_dict, degree_dict = calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dictionary, min_score, min_degree, compound_lst)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
@@ -626,51 +521,40 @@ print 'Done.\n'
 # Calculate simulated importance values if specified
 if iterations > 1:
 
-	print 'Comparing to simulated transcript distribution...\n'
-	input_interval_list, output_interval_list, composite_interval_list = monte_carlo_sim(reaction_graph, enzyme_list, iterations, compound_list, compound_dictionary, min_importance, min_degree, total, max)
+	print 'Comparing to simulated transcript distribution...\n'	
+	input_interval_lst, output_interval_lst = monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, KO_lst, iterations, compound_name_dictionary, min_score, min_degree, total, max, compound_lst, transcript_distribution_lst)
+	final_input = confidence_interval(input_score_dict, input_interval_lst)
+	final_output = confidence_interval(output_score_dict, output_interval_lst)
 	print 'Done.\n'
 	
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to files...\n'
-	
 	outname = file_name + '.input_score.monte_carlo.txt'
-	final_output = find_sig(inputscore_list, input_interval_list)
-	write_output('Compound_name	Compound_code	Input_metabolite_score	Simulated_Mean	Simulated_Std_Dev	Relationship_to_Mean	Significance\n', final_output, outname)
+	write_list('Compound_code	Compound_name	Input_metabolite_score	Simulated_Mean	Simulated_Std_Dev	Relationship_to_Mean	Significance\n', final_input, outname)
 	
 	outname = file_name + '.output_score.monte_carlo.txt'
-	final_output = find_sig(outputscore_list, output_interval_list)
-	write_output('Compound_name	Compound_code	Output_metabolite_score	Simulated_Mean	Simulated_Std_Dev	Relationship_to_Mean	Significance\n', final_output, outname)
-	
-	outname = file_name + '.composite_score.monte_carlo.txt'
-	final_output = find_sig(compositescore_list, composite_interval_list)
-	write_output('Compound_name	Compound_code	Composite_metabolite_score	Simulated_Mean	Simulated_Std_Dev	Relationship_to_Mean	Significance\n', final_output, outname)
-	
+	write_list('Compound_code	Compound_name	Output_metabolite_score	Simulated_Mean	Simulated_Std_Dev	Relationship_to_Mean	Significance\n', final_output, outname)
 	print 'Done.\n'
-	
+
+# If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
 else:
 	print 'Writing score data to files...\n' 
 	outname = file_name + '.input_score.txt'
-	write_output('Compound_name	Compound_code	Input_metabolite_score\n', inputscore_list, outname)
+	write_dictionary('Compound_code	Compound_name	Input_metabolite_score\n', input_score_dict, outname)
 
 	outname = file_name + '.output_score.txt'
-	write_output('Compound_name	Compound_code	Output_metabolite_score\n', outputscore_list, outname)
-
-	outname = file_name + '.composite_score.txt'
-	write_output('Compound_name	Compound_code	Composite_metabolite_score\n', compositescore_list, outname)
-	print '\nDone.\n'
-
-#---------------------------------------------------------------------------------------#		
-
-# Write network topology info to files
-print 'Writing degree information to files...\n' 
-compiled_degree = combined_degree(indegree_list, outdegree_list, alldegree_list, compound_dictionary)
-outname = file_name + '.topology.txt'
-write_output('Compound_name	Compound_code	Indegree	Outdegree	Total_Edges\n', compiled_degree, outname)
-print 'Done.\n'
+	write_dictionary('Compound_code	Compound_name	Output_metabolite_score\n', output_score_dict, outname)
+	print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
 
 # Wrap everything up
+
+# Write network topology info to files
+print 'Writing degree information to files...\n' 
+outname = file_name + '.topology.txt'
+write_dictionary('Compound_code	Compound_name	Indegree	Outdegree\n', degree_dict, outname)
+print 'Done.\n'
 
 # Return to the directory the script was called to
 os.chdir(starting_directory)	
