@@ -302,7 +302,6 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 			input_score = input_transcription / outdegree
 		if indegree == 0.0:
 			output_score = 0.0
-			input_score = input_score + (input_score / 2)
 		else:
 			output_score = output_transcription / indegree
 		
@@ -468,19 +467,6 @@ os.chdir(directory)
 
 #---------------------------------------------------------------------------------------#		
 
-# Write parameters to a file
-with open('parameters.txt', 'w') as parameter_file:
-	outputString = '''User Defined Parameters
-KO expression file: {ko}
-Graph name: {name}
-Minimum compound importance: {imp}
-Minimum edges per node: {deg}
-Monte Carlo simulation iterations: {iter}
-'''.format(ko=str(KO_input_file), name=str(file_name), imp=str(min_score), deg=str(min_degree), iter=str(iterations))
-	parameter_file.write(outputString)
-
-#---------------------------------------------------------------------------------------#		
-
 # Create a dictionary of KO expression scores and load KEGG dictionaries
 print('\nReading in KEGG dictionaries...\n')
 
@@ -512,6 +498,20 @@ write_list('none', KO_lst, 'enzyme.lst')
 # Write network to a list for use in Neo4j or R
 write_list('none', reaction_graph, 'bipartite_graph.txt')
 
+#---------------------------------------------------------------------------------------#		
+
+# Write parameters to a file
+with open('parameters.txt', 'w') as parameter_file:
+	outputString = '''User Defined Parameters
+KO expression file: {ko}
+Graph name: {name}
+Minimum compound importance: {imp}
+Minimum edges per node: {deg}
+KEGG ortholog nodes: {kos}
+Substrate nodes: {substrate}
+Monte Carlo simulation iterations: {iter}
+'''.format(ko=str(KO_input_file), name=str(file_name), imp=str(min_score), deg=str(min_degree), iter=str(iterations), kos=str(len(KO_lst)), substrate=str(len(compound_lst)))
+	parameter_file.write(outputString)
 #---------------------------------------------------------------------------------------#	
 
 # Calculate actual importance scores for each compound in the network
