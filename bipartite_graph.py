@@ -282,7 +282,7 @@ def compile_scores(transcript_dictionary, ko_input_dict, ko_output_dict, compoun
 
 
 # Calculate input and output scores and well as degree of each compound node
-def calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dict, min_score, min_degree, compound_lst):
+def calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dict, min_score, min_indegree, min_outdegree, compound_lst):
 	
 	input_score_dict = {}
 	output_score_dict = {}
@@ -324,14 +324,14 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 		if output_score >= min_score:
 			output_score_dict[compound].extend((compound_name, output_score))
 		
-		if indegree >= min_degree and outdegree >= min_degree:
+		if indegree >= min_indegree and outdegree >= min_outdegree:
 			degree_dict[compound].extend((compound_name, indegree, outdegree))	
 					
 	return input_score_dict, output_score_dict, degree_dict
 	
 	
 # Perform iterative Monte Carlo simulation to create confidence interval for compound importance values
-def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations, compound_name_dict, min_score, min_degree, seq_total, seq_max, compound_lst, transcript_distribution_lst):
+def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations, compound_name_dict, min_score, min_indegree, min_outdegree, seq_total, seq_max, compound_lst, transcript_distribution_lst):
 	
 	gene_count = len(kos)
 	probability = 1.0 / gene_count
@@ -361,7 +361,7 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 			sim_transcript_dict[kos[index]] = sim_transcriptome[index]
 		
 		substrate_dict, degree_dict = compile_scores(sim_transcript_dict, ko_input_dict, ko_output_dict, compound_lst, kos)
-		input_score_dict, output_score_dict, degree_dict = calculate_score(substrate_dict, degree_dict, compound_name_dict, min_score, min_degree, compound_lst)
+		input_score_dict, output_score_dict, degree_dict = calculate_score(substrate_dict, degree_dict, compound_name_dict, min_score, min_indegree, min_outdegree, compound_lst)
 		
 		# Make dictionaries of scores for each compound for each direction
 		for compound in compound_lst:
@@ -517,18 +517,19 @@ with open('parameters.txt', 'w') as parameter_file:
 KO expression file: {ko}
 Graph name: {name}
 Minimum compound importance: {imp}
-Minimum edges per node: {deg}
+Minimum input edges per node: {outdeg}
+Minimum output edges per node: {indeg}
 KEGG ortholog nodes: {kos}
 Substrate nodes: {substrate}
 Monte Carlo simulation iterations: {iter}
-'''.format(ko=str(KO_input_file), name=str(file_name), imp=str(min_score), deg=str(min_degree), iter=str(iterations), kos=str(len(KO_lst)), substrate=str(len(compound_lst)))
+'''.format(ko=str(KO_input_file), name=str(file_name), imp=str(min_score), outdeg=str(min_outdegree), indeg=str(min_indegree), iter=str(iterations), kos=str(len(KO_lst)), substrate=str(len(compound_lst)))
 	parameter_file.write(outputString)
 #---------------------------------------------------------------------------------------#	
 
 # Calculate actual importance scores for each compound in the network
 print 'Calculating compound node connectedness and metabolite scores...\n'
 compound_transcript_dict, compound_degree_dict = compile_scores(transcript_dict, ko_input_dict, ko_output_dict, compound_lst, KO_lst)
-input_score_dict, output_score_dict, degree_dict = calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dictionary, min_score, min_degree, compound_lst)
+input_score_dict, output_score_dict, degree_dict = calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dictionary, min_score, min_indegree, min_outdegree, compound_lst)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
@@ -537,7 +538,7 @@ print 'Done.\n'
 if iterations > 1:
 
 	print 'Comparing to simulated transcript distribution...\n'	
-	input_interval_lst, output_interval_lst = monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, KO_lst, iterations, compound_name_dictionary, min_score, min_degree, total, max, compound_lst, transcript_distribution_lst)
+	input_interval_lst, output_interval_lst = monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, KO_lst, iterations, compound_name_dictionary, min_score, min_indegree, min_outdegree, total, max, compound_lst, transcript_distribution_lst)
 	final_input = confidence_interval(input_score_dict, input_interval_lst)
 	final_output = confidence_interval(output_score_dict, output_interval_lst)
 	print 'Done.\n'
