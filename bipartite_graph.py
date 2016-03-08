@@ -84,7 +84,10 @@ elif os.stat(KO_input_file).st_size == 0:
 elif min_score < 0:
 	print 'Invalid importance minimum. Aborting.'
 	sys.exit()
-elif min_degree < 0:
+elif min_indegree < 0:
+	print 'Invalid degree minimum. Aborting.'
+	sys.exit()
+elif min_outdegree < 0:
 	print 'Invalid degree minimum. Aborting.'
 	sys.exit()
 elif iterations < 0:
