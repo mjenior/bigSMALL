@@ -58,8 +58,9 @@ start = time.time()
 parser = argparse.ArgumentParser(description='Generate bipartite metabolic models and calculates importance of substrate nodes based on gene expression.')
 parser.add_argument('input_file')
 parser.add_argument('--name', default='organism', help='Organism or other name for KO+expression file (default is organism)')
-parser.add_argument('--min', default=0, help='minimum importance value to report')
-parser.add_argument('--degree', default=0, help='minimum degree value to report')
+parser.add_argument('--min', default=0, help='minimum substrate importance value')
+parser.add_argument('--indegree', default=0, help='minimum output connections for a substrate')
+parser.add_argument('--outdegree', default=0, help='minimum input connections for a substrate')
 parser.add_argument('--iters', default=1, help='iterations for random distribution subsampling')
 args = parser.parse_args()
 
@@ -67,7 +68,8 @@ args = parser.parse_args()
 KO_input_file = str(args.input_file)
 file_name = str(args.name)
 min_score = int(args.min)
-min_degree = int(args.degree)
+min_indegree = int(args.indegree)
+min_outdegree = int(args.outdegree)
 iterations = int(args.iters)
 
 #---------------------------------------------------------------------------------------#			
@@ -298,10 +300,16 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 		
 		if outdegree == 0.0:
 			input_score = 0.0
+			input_score_norm = 0.0
+			input_score_ev = 0.0
 		else:
 			input_score = input_transcription / outdegree
+			input_score_norm = input_transcription / outdegree
+			input_score_ev = input_transcription / outdegree
 		if indegree == 0.0:
 			output_score = 0.0
+			output_score_norm = 0.0
+			output_score_ev = 0.0
 		else:
 			output_score = output_transcription / indegree
 		
@@ -495,7 +503,7 @@ reaction_graph, ko_input_dict, ko_output_dict, compound_lst = network_dictionari
 write_list('none', compound_lst, 'compound.lst')
 write_list('none', KO_lst, 'enzyme.lst')
 
-# Write network to a list for use in Neo4j or R
+# Write network to a two column matrix for use in Neo4j or R
 write_list('none', reaction_graph, 'bipartite_graph.txt')
 
 #---------------------------------------------------------------------------------------#		
