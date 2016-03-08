@@ -302,27 +302,27 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 		output_transcription = compound_transcript_dict[compound][1]	
 		
 		if outdegree == 0.0:
-			input_score = 0.0
 			input_score_norm = 0.0
 			input_score_ev = 0.0
 		else:
-			input_score = input_transcription / outdegree
 			input_score_norm = input_transcription / outdegree
-			input_score_ev = input_transcription / outdegree
+			input_score_ev = input_transcription * outdegree
 		if indegree == 0.0:
-			output_score = 0.0
 			output_score_norm = 0.0
 			output_score_ev = 0.0
 		else:
-			output_score = output_transcription / indegree
+			output_score_norm = output_transcription / indegree
+			output_score_ev = output_transcription * indegree
 		
-		input_score = float("%.3f" % input_score)
-		output_score = float("%.3f" % output_score)
+		input_score_norm = float("%.3f" % input_score_norm)
+		input_score_ev = float("%.3f" % input_score_ev)
+		output_score_norm = float("%.3f" % output_score_norm)
+		output_score_ev = float("%.3f" % output_score_ev)
 			
-		if input_score >= min_score:
-			input_score_dict[compound].extend((compound_name, input_score, indegree, outdegree))
-		if output_score >= min_score:
-			output_score_dict[compound].extend((compound_name, output_score, indegree, outdegree))
+		if input_score_norm >= min_score and input_score_ev >= min_score:
+			input_score_dict[compound].extend((compound_name, input_score_ev, indegree, outdegree))
+		if output_score_norm >= min_score and output_score_ev >= min_score:
+			output_score_dict[compound].extend((compound_name, output_score_ev, indegree, outdegree))
 		
 		if indegree >= min_indegree and outdegree >= min_outdegree:
 			degree_dict[compound].extend((compound_name, indegree, outdegree))	
