@@ -50,7 +50,7 @@ expression_file
 
 --iters ITERS		iterations for random distribution subsampling
 
---type TYPE		Type of substrate score calculation to perform (1=Eigen Vector, 2=Normalization, 12=Both)
+--type TYPE		Type of substrate score calculation to perform (1=Eigen Vector or 2=Normalization)
   
 ---------------------------------------------------------------------------
 

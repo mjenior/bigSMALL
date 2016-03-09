@@ -72,7 +72,7 @@ min_score = int(args.min)
 min_indegree = int(args.indegree)
 min_outdegree = int(args.outdegree)
 iterations = int(args.iters)
-type = int(args.type)
+calc_type = int(args.type)
 
 #---------------------------------------------------------------------------------------#			
 
@@ -95,8 +95,8 @@ elif min_outdegree < 0:
 elif iterations < 0:
 	print 'Invalid iteration value. Aborting.'
 	sys.exit()
-elif not type in [1, 2, 12]:
-	print 'Score calculation. Aborting.'
+elif not type in [1, 2]:
+	print 'Invalid score calculation. Aborting.'
 	sys.exit()
 	
 #---------------------------------------------------------------------------------------#			
@@ -287,7 +287,7 @@ def compile_scores(transcript_dictionary, ko_input_dict, ko_output_dict, compoun
 
 
 # Calculate input and output scores and well as degree of each compound node
-def calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dict, min_score, min_indegree, min_outdegree, compound_lst):
+def calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dict, min_score, min_indegree, min_outdegree, compound_lst, type):
 	
 	input_score_dict = {}
 	output_score_dict = {}
@@ -323,11 +323,18 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 		input_score_ev = float("%.3f" % input_score_ev)
 		output_score_norm = float("%.3f" % output_score_norm)
 		output_score_ev = float("%.3f" % output_score_ev)
+		
+		if type == 1:
+			input_score = input_score_ev
+			output_score = output_score_ev
+		else:
+			input_score = input_score_norm
+			output_score = output_score_norm
 			
-		if input_score_norm >= min_score and input_score_ev >= min_score:
-			input_score_dict[compound].extend((compound_name, input_score_ev, indegree, outdegree))
-		if output_score_norm >= min_score and output_score_ev >= min_score:
-			output_score_dict[compound].extend((compound_name, output_score_ev, indegree, outdegree))
+		if input_score >= min_score:
+			input_score_dict[compound].extend((compound_name, input_score, indegree, outdegree))
+		if output_score >= min_score:
+			output_score_dict[compound].extend((compound_name, output_score, indegree, outdegree))
 		
 		if indegree >= min_indegree and outdegree >= min_outdegree:
 			degree_dict[compound].extend((compound_name, indegree, outdegree))	
@@ -336,7 +343,7 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 	
 	
 # Perform iterative Monte Carlo simulation to create confidence interval for compound importance values
-def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations, compound_name_dict, min_score, min_indegree, min_outdegree, seq_total, seq_max, compound_lst, transcript_distribution_lst):
+def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations, compound_name_dict, min_score, min_indegree, min_outdegree, seq_total, seq_max, compound_lst, transcript_distribution_lst, type):
 	
 	gene_count = len(kos)
 	probability = 1.0 / gene_count
@@ -366,7 +373,7 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 			sim_transcript_dict[kos[index]] = sim_transcriptome[index]
 		
 		substrate_dict, degree_dict = compile_scores(sim_transcript_dict, ko_input_dict, ko_output_dict, compound_lst, kos)
-		input_score_dict, output_score_dict, degree_dict = calculate_score(substrate_dict, degree_dict, compound_name_dict, min_score, min_indegree, min_outdegree, compound_lst)
+		input_score_dict, output_score_dict, degree_dict = calculate_score(substrate_dict, degree_dict, compound_name_dict, min_score, min_indegree, min_outdegree, compound_lst, type)
 		
 		# Make dictionaries of scores for each compound for each direction
 		for compound in compound_lst:
@@ -494,8 +501,8 @@ ko_reactionpkl_path = script_path + '/support/ko_reaction.pkl'
 ko_dictionary = pickle.load(open(ko_reactionpkl_path, 'rb'))
 
 # Read in pickled reaction to reaction_mapformula dictionary
-#reaction_mapformulapkl_path = script_path + '/support/reaction_mapformula.pkl'
-reaction_mapformulapkl_path = script_path + '/support/reaction_mapformula_nonrev.pkl'
+reaction_mapformulapkl_path = script_path + '/support/reaction_mapformula.pkl'
+#reaction_mapformulapkl_path = script_path + '/support/reaction_mapformula_nonrev.pkl'
 reaction_dictionary = pickle.load(open(reaction_mapformulapkl_path, 'rb'))
 
 # Read in pickled compound name dictionary
@@ -519,6 +526,13 @@ write_list('none', reaction_graph, 'bipartite_graph.txt')
 
 #---------------------------------------------------------------------------------------#		
 
+# Define calculation selection with a string
+if calc_type == 1:
+	calculation = 'Eigen vector scaling'
+else:
+	calculation = 'Topology normalization'
+
+
 # Write parameters to a file
 with open('parameters.txt', 'w') as parameter_file:
 	outputString = '''User Defined Parameters
@@ -530,14 +544,15 @@ Minimum output edges per node: {indeg}
 KEGG ortholog nodes: {kos}
 Substrate nodes: {substrate}
 Monte Carlo simulation iterations: {iter}
-'''.format(ko=str(KO_input_file), name=str(file_name), imp=str(min_score), outdeg=str(min_outdegree), indeg=str(min_indegree), iter=str(iterations), kos=str(len(KO_lst)), substrate=str(len(compound_lst)))
+Substrate score calculation: {calculation}
+'''.format(ko=str(KO_input_file), name=str(file_name), imp=str(min_score), outdeg=str(min_outdegree), indeg=str(min_indegree), iter=str(iterations), kos=str(len(KO_lst)), substrate=str(len(compound_lst)), type=calculation)
 	parameter_file.write(outputString)
 #---------------------------------------------------------------------------------------#	
 
 # Calculate actual importance scores for each compound in the network
 print 'Calculating compound node connectedness and metabolite scores...\n'
 compound_transcript_dict, compound_degree_dict = compile_scores(transcript_dict, ko_input_dict, ko_output_dict, compound_lst, KO_lst)
-input_score_dict, output_score_dict, degree_dict = calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dictionary, min_score, min_indegree, min_outdegree, compound_lst)
+input_score_dict, output_score_dict, degree_dict = calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dictionary, min_score, min_indegree, min_outdegree, compound_lst, calc_type)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
@@ -546,7 +561,7 @@ print 'Done.\n'
 if iterations > 1:
 
 	print 'Comparing to simulated transcript distribution...\n'	
-	input_interval_lst, output_interval_lst = monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, KO_lst, iterations, compound_name_dictionary, min_score, min_indegree, min_outdegree, total, max, compound_lst, transcript_distribution_lst)
+	input_interval_lst, output_interval_lst = monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, KO_lst, iterations, compound_name_dictionary, min_score, min_indegree, min_outdegree, total, max, compound_lst, transcript_distribution_lst, calc_type)
 	final_input = confidence_interval(input_score_dict, input_interval_lst, degree_dict)
 	final_output = confidence_interval(output_score_dict, output_interval_lst, degree_dict)
 	print 'Done.\n'
