@@ -62,6 +62,7 @@ parser.add_argument('--min', default=0, help='minimum substrate importance value
 parser.add_argument('--indegree', default=0, help='minimum output connections for a substrate')
 parser.add_argument('--outdegree', default=0, help='minimum input connections for a substrate')
 parser.add_argument('--iters', default=1, help='iterations for random distribution subsampling')
+parser.add_argument('--type', default=1, help='Type of substrate score calculation to perform (1=Eigen Vector or 2=Normalization)')
 args = parser.parse_args()
 
 # Assign variables
@@ -71,6 +72,7 @@ min_score = int(args.min)
 min_indegree = int(args.indegree)
 min_outdegree = int(args.outdegree)
 iterations = int(args.iters)
+type = int(args.type)
 
 #---------------------------------------------------------------------------------------#			
 
@@ -92,6 +94,9 @@ elif min_outdegree < 0:
 	sys.exit()
 elif iterations < 0:
 	print 'Invalid iteration value. Aborting.'
+	sys.exit()
+elif not type in [1, 2, 12]:
+	print 'Score calculation. Aborting.'
 	sys.exit()
 	
 #---------------------------------------------------------------------------------------#			

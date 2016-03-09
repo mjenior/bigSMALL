@@ -49,6 +49,8 @@ expression_file
 --degree DEGREE		minimum degree value to report
 
 --iters ITERS		iterations for random distribution subsampling
+
+--type TYPE		Type of substrate score calculation to perform (1=Eigen Vector, 2=Normalization, 12=Both)
   
 ---------------------------------------------------------------------------
 
