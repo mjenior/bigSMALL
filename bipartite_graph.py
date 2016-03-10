@@ -529,9 +529,13 @@ write_list('none', reaction_graph, 'bipartite_graph.txt')
 # Define calculation selection with a string
 if calc_type == 1:
 	calculation = 'Eigen vector scaling'
-else:
+elif calc_type == 2:
 	calculation = 'Topology normalization'
-
+	
+if iterations == 1:
+	iter_str = 'none'
+else:
+	iter_str = str(iterations)
 
 # Write parameters to a file
 with open('parameters.txt', 'w') as parameter_file:
@@ -545,7 +549,7 @@ KEGG ortholog nodes: {kos}
 Substrate nodes: {substrate}
 Monte Carlo simulation iterations: {iter}
 Substrate score calculation: {calculation}
-'''.format(ko=str(KO_input_file), name=str(file_name), imp=str(min_score), outdeg=str(min_outdegree), indeg=str(min_indegree), iter=str(iterations), kos=str(len(KO_lst)), substrate=str(len(compound_lst)), type=calculation)
+'''.format(ko=str(KO_input_file), name=str(file_name), imp=str(min_score), outdeg=str(min_outdegree), indeg=str(min_indegree), iter=iter_str, kos=str(len(KO_lst)), substrate=str(len(compound_lst)), type=calculation)
 	parameter_file.write(outputString)
 #---------------------------------------------------------------------------------------#	
 
@@ -568,10 +572,10 @@ if iterations > 1:
 	
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to files...\n'
-	outname = file_name + '.input_score.monte_carlo.txt'
+	outname = file_name + '.input_score.txt'
 	write_list('Compound_code	Compound_name	Input_metabolite_score	Simulated_Mean	Simulated_Std_Dev	Relationship_to_Mean	Significance	Indegree	Outdegree\n', final_input, outname)
 	
-	outname = file_name + '.output_score.monte_carlo.txt'
+	outname = file_name + '.output_score.txt'
 	write_list('Compound_code	Compound_name	Output_metabolite_score	Simulated_Mean	Simulated_Std_Dev	Relationship_to_Mean	Significance	Indegree	Outdegree\n', final_output, outname)
 	print 'Done.\n'
 
