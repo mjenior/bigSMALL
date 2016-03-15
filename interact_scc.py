@@ -88,8 +88,8 @@ parser = argparse.ArgumentParser(description='Calculate metabolic interaction fr
 parser.add_argument('--name1', default='organism1', help='Name of first (meta)organism')
 parser.add_argument('--name2', default='organism2', help='Name of second (meta)organism')
 
-parser.add_argument('--sccfiles1', default='none', help='Directory of SCC network output for first (meta)organism')
-parser.add_argument('--sccfiles2', default='none', help='Directory of SCC network output for second (meta)organism')
+parser.add_argument('--files1', default='none', help='Directory of SCC network output for first (meta)organism')
+parser.add_argument('--files2', default='none', help='Directory of SCC network output for second (meta)organism')
 
 parser.add_argument('--confidence', default=0, help='Minimum confidence values for seeds and sinks to be considered in calculations')
 
@@ -99,8 +99,8 @@ parser.add_argument('--quiet', default='y', help='Turns on verbose output mode')
 args = parser.parse_args()
 name1 = args.name1
 name2 = args.name2
-sccfiles1 = args.sccfiles1
-sccfiles2 = args.sccfiles2
+sccfiles1 = args.files1
+sccfiles2 = args.files2
 confidence = args.confidence
 quiet = args.quiet
 

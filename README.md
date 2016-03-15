@@ -34,7 +34,7 @@ Calculates relative importance of a given metabolite based on the expression of 
 python bipartite_graph.py ko_expression.list
 
 # Additional Options:
-*Positional, required argument:**
+**Positional, required argument:**
 
 expression_file
 
@@ -50,7 +50,7 @@ expression_file
 
 --iters ITERS		iterations for random distribution subsampling
 
---type TYPE		Type of substrate score calculation to perform (1=Eigen Vector or 2=Normalization)
+--type TYPE		Type of substrate score calculation to perform (1=Eigen Vector Scaling or 2=Normalization By Topology)
   
 ---------------------------------------------------------------------------
 
@@ -86,14 +86,14 @@ Interaction metrics from Levy R., & Borenstein E. (2013). Metabolic modeling of 
 interaction in the human microbiome elucidates community-level assembly rules.
 
 # Basic usage:
-python interact_scc.py --sccfiles1 organism_1.scc.files --sccfiles2 organism_2.scc.files
+python interact_scc.py --files1 organism_1.scc.files --files2 organism_2.scc.files
 
 # Additional Options:
 **Required arguments:**
 
---sccfiles1 SCCFILES1		 Directory of SCC network output for first (meta)organism
+--files1 FILES1		 Directory of SCC network output for first (meta)organism
 
---sccfiles2 SCCFILES2		Directory of SCC network output for second (meta)organism
+--files2 FILES2		Directory of SCC network output for second (meta)organism
 
 **Optional arguments:**
 
@@ -114,11 +114,14 @@ python interact_scc.py --sccfiles1 organism_1.scc.files --sccfiles2 organism_2.s
 Under construction
 
 # Basic usage:
-python interact_bipartite.py 
+python interact_bipartite.py --files1 organism_1.scc.files --files2 organism_2.scc.files
 
 # Additional Options:
 **Required arguments:**
 
+--files1 FILES1		 Directory of bipartite network output for first (meta)organism
+
+--files2 FILES2		Directory of bipartite network output for second (meta)organism
 
 **Optional arguments:**
 
@@ -133,10 +136,12 @@ python interact_bipartite.py
 
 # Section 5 - Appendix
 
-Sample files to be used for practice with each of the respective scripts
+**Sample files to be used as examples with each of the respective scripts**
 
-ko_expression.list - list of KO codes and corresponding expression values for Clostridium difficile strain 630   
+ko_expression.list - list of KO codes and corresponding expression values for Clostridium difficile strain 630  
+ 
 ko.list - list of KEGG gene codes and corresponding KO codes for the genome of Clostridium difficile strain 630   
-organism_1.seedfiles and organism_2.seedfiles - Output of calc_seeds.py for Clostridium difficile 630 and Eubacterium rectale ATCC 33656   
 
-Need to generate example files for bipartite interaction
+organism_1.scc.files **and** organism_2.scc.files - Output of scc_graph.py for Clostridium difficile 630 and Eubacterium rectale ATCC 33656   
+
+organism_1.bipartite.files **and** organism_2.bipartite.files - Output of bipartite_graph.py for Clostridium difficile 630 and Eubacterium rectale ATCC 33656   
