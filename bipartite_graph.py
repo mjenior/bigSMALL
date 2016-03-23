@@ -357,8 +357,8 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 	probability = 1.0 / gene_count
 	
 	# Generates a random negative binomial distribution to sample from, way too high for my expression values
-	distribution = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
-	distribution = [i for i in distribution if i < (seq_max/100)]  # screen for transcript mapping greater than largest value actually sequenced
+	#distribution = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
+	#distribution = [i for i in distribution if i < seq_max]  # screen for transcript mapping greater than largest value actually sequenced
 	
 	input_distribution_dict = {}
 	output_distribution_dict = {}
@@ -373,8 +373,8 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 	
 	for current in range(0, iterations):
 			
-		sim_transcriptome = random.sample(distribution, gene_count)
-		#sim_transcriptome = random.sample(transcript_distribution_lst, gene_count)
+		#sim_transcriptome = random.sample(distribution, gene_count)
+		sim_transcriptome = random.sample(transcript_distribution_lst, gene_count)
 		
 		sim_transcript_dict = {}
 		for index in range(0, gene_count):

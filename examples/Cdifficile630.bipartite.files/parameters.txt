@@ -6,5 +6,5 @@ Minimum input edges per node: 0
 Minimum output edges per node: 0
 KEGG ortholog nodes: 1184
 Substrate nodes: 758
-Monte Carlo simulation iterations: 1000
+Monte Carlo simulation iterations: 5
 Substrate score calculation: Eigen vector scaling
