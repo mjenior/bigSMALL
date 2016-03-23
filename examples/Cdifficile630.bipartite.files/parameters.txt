@@ -1,0 +1,10 @@
+User Defined Parameters
+KO expression file: ko_expression.list
+Graph name: Cdifficile630
+Minimum compound importance: 0
+Minimum input edges per node: 0
+Minimum output edges per node: 0
+KEGG ortholog nodes: 1184
+Substrate nodes: 758
+Monte Carlo simulation iterations: 1000
+Substrate score calculation: Eigen vector scaling

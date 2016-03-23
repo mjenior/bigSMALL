@@ -95,7 +95,7 @@ elif min_outdegree < 0:
 elif iterations < 0:
 	print 'Invalid iteration value. Aborting.'
 	sys.exit()
-elif not type in [1, 2]:
+elif not calc_type in [1, 2]:
 	print 'Invalid score calculation. Aborting.'
 	sys.exit()
 	
@@ -340,7 +340,15 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 			degree_dict[compound].extend((compound_name, indegree, outdegree))	
 					
 	return input_score_dict, output_score_dict, degree_dict
-	
+
+
+
+
+# Adding a function to randomize network topology as an alternate means of deciding significance, found in R. Milo et al. (2002)
+#def randomize_topology():
+
+
+
 	
 # Perform iterative Monte Carlo simulation to create confidence interval for compound importance values
 def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations, compound_name_dict, min_score, min_indegree, min_outdegree, seq_total, seq_max, compound_lst, transcript_distribution_lst, type):
@@ -350,7 +358,7 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 	
 	# Generates a random negative binomial distribution to sample from, way too high for my expression values
 	distribution = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
-	distribution = [i for i in distribution if i < seq_max]  # screen for transcript mapping greater than largest value actually sequenced
+	distribution = [i for i in distribution if i < (seq_max/100)]  # screen for transcript mapping greater than largest value actually sequenced
 	
 	input_distribution_dict = {}
 	output_distribution_dict = {}
@@ -528,9 +536,9 @@ write_list('none', reaction_graph, 'bipartite_graph.txt')
 
 # Define calculation selection with a string
 if calc_type == 1:
-	calculation = 'Eigen vector scaling'
+	calculation_str = 'Eigen vector scaling'
 elif calc_type == 2:
-	calculation = 'Topology normalization'
+	calculation_str = 'Topology normalization'
 	
 if iterations == 1:
 	iter_str = 'none'
@@ -548,8 +556,8 @@ Minimum output edges per node: {indeg}
 KEGG ortholog nodes: {kos}
 Substrate nodes: {substrate}
 Monte Carlo simulation iterations: {iter}
-Substrate score calculation: {calculation}
-'''.format(ko=str(KO_input_file), name=str(file_name), imp=str(min_score), outdeg=str(min_outdegree), indeg=str(min_indegree), iter=iter_str, kos=str(len(KO_lst)), substrate=str(len(compound_lst)), type=calculation)
+Substrate score calculation: {type}
+'''.format(ko=str(KO_input_file), name=str(file_name), imp=str(min_score), outdeg=str(min_outdegree), indeg=str(min_indegree), iter=iter_str, kos=str(len(KO_lst)), substrate=str(len(compound_lst)), type=calculation_str)
 	parameter_file.write(outputString)
 #---------------------------------------------------------------------------------------#	
 
