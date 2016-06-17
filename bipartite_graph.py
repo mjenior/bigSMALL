@@ -113,7 +113,7 @@ def write_list(header, out_lst, file_name):
 		for index in out_lst:
 			index = [str(x) for x in index]
 			index[-1] = str(index[-1]) + '\n'
-			out_file.write('\t'.join(index))
+			out_file.write(''.join(index))
 			
 
 # Function to write dictionaries to files	
