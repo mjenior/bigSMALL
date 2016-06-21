@@ -62,7 +62,6 @@ parser.add_argument('--min', default=0, help='minimum substrate importance value
 parser.add_argument('--indegree', default=0, help='minimum output connections for a substrate')
 parser.add_argument('--outdegree', default=0, help='minimum input connections for a substrate')
 parser.add_argument('--iters', default=1, help='iterations for random distribution subsampling')
-parser.add_argument('--type', default=1, help='Type of substrate score calculation to perform (1=Eigen Vector or 2=Normalization)')
 args = parser.parse_args()
 
 # Assign variables
@@ -72,11 +71,10 @@ min_score = int(args.min)
 min_indegree = int(args.indegree)
 min_outdegree = int(args.outdegree)
 iterations = int(args.iters)
-calc_type = int(args.type)
 
 #---------------------------------------------------------------------------------------#			
 
-# Check for user error
+# Check if the user fucked it up
 if KO_input_file == 'input_file':
 	print 'No KO+expression file provided. Aborting.'
 	sys.exit()
@@ -94,9 +92,6 @@ elif min_outdegree < 0:
 	sys.exit()
 elif iterations < 0:
 	print 'Invalid iteration value. Aborting.'
-	sys.exit()
-elif not calc_type in [1, 2]:
-	print 'Invalid score calculation. Aborting.'
 	sys.exit()
 	
 #---------------------------------------------------------------------------------------#			
@@ -287,7 +282,7 @@ def compile_scores(transcript_dictionary, ko_input_dict, ko_output_dict, compoun
 
 
 # Calculate input and output scores and well as degree of each compound node
-def calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dict, min_score, min_indegree, min_outdegree, compound_lst, type):
+def calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dict, min_score, min_indegree, min_outdegree, compound_lst):
 	
 	input_score_dict = {}
 	output_score_dict = {}
@@ -310,27 +305,15 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 			input_score_norm = 0.0
 			input_score_ev = 0.0
 		else:
-			input_score_norm = input_transcription / outdegree
-			input_score_ev = input_transcription * outdegree
+			input_score = math.sqrt(input_transcription) / outdegree
 		if indegree == 0.0:
-			output_score_norm = 0.0
-			output_score_ev = 0.0
+			output_score = 0.0
 		else:
-			output_score_norm = output_transcription / indegree
-			output_score_ev = output_transcription * indegree
+			output_score = math.sqrt(output_transcription) / indegree
 		
-		input_score_norm = float("%.3f" % input_score_norm)
-		input_score_ev = float("%.3f" % input_score_ev)
-		output_score_norm = float("%.3f" % output_score_norm)
-		output_score_ev = float("%.3f" % output_score_ev)
+		input_score = float("%.3f" % input_score_norm)
+		output_score = float("%.3f" % output_score_norm)
 		
-		if type == 1:
-			input_score = input_score_ev
-			output_score = output_score_ev
-		else:
-			input_score = input_score_norm
-			output_score = output_score_norm
-			
 		if input_score >= min_score:
 			input_score_dict[compound].extend((compound_name, input_score, indegree, outdegree))
 		if output_score >= min_score:
@@ -341,17 +324,9 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 					
 	return input_score_dict, output_score_dict, degree_dict
 
-
-
-
-# Adding a function to randomize network topology as an alternate means of deciding significance, found in R. Milo et al. (2002)
-#def randomize_topology():
-
-
-
 	
 # Perform iterative Monte Carlo simulation to create confidence interval for compound importance values
-def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations, compound_name_dict, min_score, min_indegree, min_outdegree, seq_total, seq_max, compound_lst, transcript_distribution_lst, type):
+def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations, compound_name_dict, min_score, min_indegree, min_outdegree, seq_total, seq_max, compound_lst, transcript_distribution_lst):
 	
 	gene_count = len(kos)
 	probability = 1.0 / gene_count
@@ -381,7 +356,7 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 			sim_transcript_dict[kos[index]] = sim_transcriptome[index]
 		
 		substrate_dict, degree_dict = compile_scores(sim_transcript_dict, ko_input_dict, ko_output_dict, compound_lst, kos)
-		input_score_dict, output_score_dict, degree_dict = calculate_score(substrate_dict, degree_dict, compound_name_dict, min_score, min_indegree, min_outdegree, compound_lst, type)
+		input_score_dict, output_score_dict, degree_dict = calculate_score(substrate_dict, degree_dict, compound_name_dict, min_score, min_indegree, min_outdegree, compound_lst)
 		
 		# Make dictionaries of scores for each compound for each direction
 		for compound in compound_lst:
@@ -535,11 +510,6 @@ write_list('none', reaction_graph, 'bipartite_graph.txt')
 #---------------------------------------------------------------------------------------#		
 
 # Define calculation selection with a string
-if calc_type == 1:
-	calculation_str = 'Eigen vector scaling'
-elif calc_type == 2:
-	calculation_str = 'Topology normalization'
-	
 if iterations == 1:
 	iter_str = 'none'
 else:
@@ -556,15 +526,14 @@ Minimum output edges per node: {indeg}
 KEGG ortholog nodes: {kos}
 Substrate nodes: {substrate}
 Monte Carlo simulation iterations: {iter}
-Substrate score calculation: {type}
-'''.format(ko=str(KO_input_file), name=str(file_name), imp=str(min_score), outdeg=str(min_outdegree), indeg=str(min_indegree), iter=iter_str, kos=str(len(KO_lst)), substrate=str(len(compound_lst)), type=calculation_str)
+'''.format(ko=str(KO_input_file), name=str(file_name), imp=str(min_score), outdeg=str(min_outdegree), indeg=str(min_indegree), iter=iter_str, kos=str(len(KO_lst)), substrate=str(len(compound_lst)))
 	parameter_file.write(outputString)
 #---------------------------------------------------------------------------------------#	
 
 # Calculate actual importance scores for each compound in the network
 print 'Calculating compound node connectedness and metabolite scores...\n'
 compound_transcript_dict, compound_degree_dict = compile_scores(transcript_dict, ko_input_dict, ko_output_dict, compound_lst, KO_lst)
-input_score_dict, output_score_dict, degree_dict = calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dictionary, min_score, min_indegree, min_outdegree, compound_lst, calc_type)
+input_score_dict, output_score_dict, degree_dict = calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dictionary, min_score, min_indegree, min_outdegree, compound_lst)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
@@ -573,7 +542,7 @@ print 'Done.\n'
 if iterations > 1:
 
 	print 'Comparing to simulated transcript distribution...\n'	
-	input_interval_lst, output_interval_lst = monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, KO_lst, iterations, compound_name_dictionary, min_score, min_indegree, min_outdegree, total, max, compound_lst, transcript_distribution_lst, calc_type)
+	input_interval_lst, output_interval_lst = monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, KO_lst, iterations, compound_name_dictionary, min_score, min_indegree, min_outdegree, total, max, compound_lst, transcript_distribution_lst)
 	final_input = confidence_interval(input_score_dict, input_interval_lst, degree_dict)
 	final_output = confidence_interval(output_score_dict, output_interval_lst, degree_dict)
 	print 'Done.\n'
