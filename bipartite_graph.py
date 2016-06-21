@@ -369,18 +369,16 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 		sys.stdout.flush()
 			
 	# Compile the scores for each compound and take the mean and standard deviation
-	input_interval_lst = []
-	output_interval_lst = []
+	interval_lst = []
 	for compound in compound_lst:
 
 		input_current_mean = float("%.3f" % (numpy.mean(input_distribution_dict[compound])))
 		input_current_std = float("%.3f" % (numpy.std(input_distribution_dict[compound])))
-		input_interval_lst.append([compound, input_current_mean, input_current_std])
-
 		output_current_mean = float("%.3f" % (numpy.mean(output_distribution_dict[compound])))
 		output_current_std = float("%.3f" % (numpy.std(output_distribution_dict[compound])))
-		output_interval_lst.append([compound, output_current_mean, output_current_std])
-		
+
+		interval_lst.append([compound, input_current_mean, input_current_std, output_current_mean, output_current_std])
+
 		progress += increment
 		progress = float("%.3f" % progress)
 		sys.stdout.write('\rProgress: ' + str(progress) + '%')
@@ -390,59 +388,98 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 	sys.stdout.flush()
 	print('\n')
 	
-	return input_interval_lst, output_interval_lst
+	return interval_lst
 
 
 # Assesses measured values against confidence interval from Monte Carlo simulation 
-def confidence_interval(score_dict, interval_lst, degree_dict):
+def confidence_interval(input_score_dict, output_score_dict, interval_lst, degree_dict):
 
 	labeled_confidence = []
 
 	for index in interval_lst:
-	
+		
+		current_name = input_score_dict[current_compound][0]
 		current_compound = index[0]
-		current_std_dev = index[1]
-		current_mean = index[2]
-		
-		current_score = score_dict[current_compound][1]
-		current_name = score_dict[current_compound][0]
-		
 		current_indegree = degree_dict[current_compound][1]
 		current_outdegree = degree_dict[current_compound][2]
 		
-		if current_score > current_mean:
+		input_std_dev = index[1]
+		input_mean = index[2]
+		input_score = input_score_dict[current_compound][1]
+		final_input_score = str(float(input_score) - float(input_mean))
 		
-			if current_score > (current_mean + current_std_dev):
+		if input_score > input_mean:
+		
+			if input_score > (input_mean + input_std_dev):
 			
-				if current_score > (current_mean + (current_std_dev * 2)):
+				if input_score > (input_mean + (input_std_dev * 2)):
 				
-					if current_score > (current_mean + (current_std_dev * 3)):
-						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'above', '***', current_indegree, current_outdegree])		
+					if input_score > (input_mean + (input_std_dev * 3)):
+						input_relation = '***'	
 					else:
-						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'above', '**', current_indegree, current_outdegree])
+						input_relation = '**'
 				else:
-					labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'above', '*', current_indegree, current_outdegree])
+					input_relation = '*'
 			else:
-				labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'above', 'n.s.', current_indegree, current_outdegree])
+				input_relation = 'n.s.'
 		
-		elif current_score < current_mean:
+		elif input_score < input_mean:
 		
-			if current_score < (current_mean - current_std_dev):
+			if input_score < (input_mean - input_std_dev):
 			
-				if current_score < (current_mean - (current_std_dev * 2)):
+				if input_score < (input_mean - (input_std_dev * 2)):
 				
-					if current_score < (current_mean - (current_std_dev * 3)):
-						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'below', '***', current_indegree, current_outdegree])		
+					if input_score < (input_mean - (input_std_dev * 3)):
+						input_relation = '***'	
 					else:
-						labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'below', '**', current_indegree, current_outdegree])
+						input_relation = '**'
 				else:
-					labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'below', '*', current_indegree, current_outdegree])
+					input_relation = '*'
 			else:
-				labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'below', 'n.s.', current_indegree, current_outdegree])
+				input_relation = 'n.s.'
 	
 		else:
-			labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, 'equal', 'NA', current_indegree, current_outdegree])
+			input_relation = 'n.s.'
+
+		output_std_dev = index[3]
+		output_mean = index[4]
+		output_score = output_score_dict[current_compound][1]
+		final_output_score = str(float(output_score) - float(output_mean))
+		
+		if output_score > output_mean:
+		
+			if output_score > (output_mean + output_std_dev):
 			
+				if output_score > (output_mean + (output_std_dev * 2)):
+				
+					if output_score > (output_mean + (output_std_dev * 3)):
+						output_relation = '***'	
+					else:
+						output_relation = '**'
+				else:
+					output_relation = '*'
+			else:
+				output_relation = 'n.s.'
+		
+		elif output_score < output_mean:
+		
+			if output_score < (output_mean - output_std_dev):
+			
+				if output_score < (output_mean - (output_std_dev * 2)):
+				
+					if output_score < (output_mean - (output_std_dev * 3)):
+						output_relation = '***'	
+					else:
+						output_relation = '**'
+				else:
+					output_relation = '*'
+			else:
+				output_relation = 'n.s.'
+		else:
+			output_relation = 'n.s.'
+
+		labeled_confidence.append([current_compound, current_name, final_input_score, current_outdegree, input_relation, final_output_score, current_indegree, current_indegree])	
+
 	return labeled_confidence
 
 
@@ -542,28 +579,24 @@ print 'Done.\n'
 if iterations > 1:
 
 	print 'Comparing to simulated transcript distribution...\n'	
-	input_interval_lst, output_interval_lst = monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, KO_lst, iterations, compound_name_dictionary, min_score, min_indegree, min_outdegree, total, max, compound_lst, transcript_distribution_lst)
-	final_input = confidence_interval(input_score_dict, input_interval_lst, degree_dict)
-	final_output = confidence_interval(output_score_dict, output_interval_lst, degree_dict)
+	interval_lst = monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, KO_lst, iterations, compound_name_dictionary, min_score, min_indegree, min_outdegree, total, max, compound_lst, transcript_distribution_lst)
+	final_data = confidence_interval(input_score_dict, output_score_dict, interval_lst, degree_dict)
 	print 'Done.\n'
 	
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to files...\n'
-	outname = file_name + '.input_score.txt'
-	write_list('Compound_code	Compound_name	Input_metabolite_score	Simulated_Mean	Simulated_Std_Dev	Relationship_to_Mean	Significance	Indegree	Outdegree\n', final_input, outname)
+	outname = file_name + '.monte_carlo.score.txt'
+	write_list('Compound_code	Compound_name	Input_metabolite_score	Outdegree	Input_Significance	Output_metabolite_score	Indegree	Output_Significance\n', final_input, outname)
 	
-	outname = file_name + '.output_score.txt'
-	write_list('Compound_code	Compound_name	Output_metabolite_score	Simulated_Mean	Simulated_Std_Dev	Relationship_to_Mean	Significance	Indegree	Outdegree\n', final_output, outname)
-	print 'Done.\n'
 
 # If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
 else:
 	print 'Writing score data to files...\n' 
 	outname = file_name + '.input_score.txt'
-	write_dictionary('Compound_code	Compound_name	Input_metabolite_score	Indegree	Outdegree\n', input_score_dict, outname)
+	write_dictionary('Compound_code	Compound_name	Input_metabolite_score	Outdegree\n', input_score_dict, outname)
 
 	outname = file_name + '.output_score.txt'
-	write_dictionary('Compound_code	Compound_name	Output_metabolite_score	Indegree	Outdegree\n', output_score_dict, outname)
+	write_dictionary('Compound_code	Compound_name	Output_metabolite_score	Indegrees\n', output_score_dict, outname)
 	print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
