@@ -108,6 +108,17 @@ def write_list(header, out_lst, file_name):
 		for index in out_lst:
 			index = [str(x) for x in index]
 			index[-1] = str(index[-1]) + '\n'
+			out_file.write('\t'.join(index))
+
+def write_list_short(header, out_lst, file_name):
+
+	with open(file_name, 'w') as out_file: 
+		
+		if not header == 'none': out_file.write(header)
+			
+		for index in out_lst:
+			index = [str(x) for x in index]
+			index[-1] = str(index[-1]) + '\n'
 			out_file.write(''.join(index))
 			
 
@@ -302,8 +313,8 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 		output_transcription = compound_transcript_dict[compound][1]	
 		
 		if outdegree == 0.0:
-			input_score_norm = 0.0
-			input_score_ev = 0.0
+			input_score = 0.0
+			input_score = 0.0
 		else:
 			input_score = math.sqrt(input_transcription) / outdegree
 		if indegree == 0.0:
@@ -311,8 +322,8 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 		else:
 			output_score = math.sqrt(output_transcription) / indegree
 		
-		input_score = float("%.3f" % input_score_norm)
-		output_score = float("%.3f" % output_score_norm)
+		input_score = float("%.3f" % input_score)
+		output_score = float("%.3f" % output_score)
 		
 		if input_score >= min_score:
 			input_score_dict[compound].extend((compound_name, input_score, indegree, outdegree))
@@ -398,8 +409,8 @@ def confidence_interval(input_score_dict, output_score_dict, interval_lst, degre
 
 	for index in interval_lst:
 		
-		current_name = input_score_dict[current_compound][0]
 		current_compound = index[0]
+		current_name = input_score_dict[current_compound][0]
 		current_indegree = degree_dict[current_compound][1]
 		current_outdegree = degree_dict[current_compound][2]
 		
@@ -478,7 +489,7 @@ def confidence_interval(input_score_dict, output_score_dict, interval_lst, degre
 		else:
 			output_relation = 'n.s.'
 
-		labeled_confidence.append([current_compound, current_name, final_input_score, current_outdegree, input_relation, final_output_score, current_indegree, current_indegree])	
+		labeled_confidence.append([current_compound, current_name, final_input_score, current_outdegree, input_relation, final_output_score, current_indegree, output_relation])	
 
 	return labeled_confidence
 
@@ -521,8 +532,8 @@ ko_reactionpkl_path = script_path + '/support/ko_reaction.pkl'
 ko_dictionary = pickle.load(open(ko_reactionpkl_path, 'rb'))
 
 # Read in pickled reaction to reaction_mapformula dictionary
-reaction_mapformulapkl_path = script_path + '/support/reaction_mapformula.pkl'
-#reaction_mapformulapkl_path = script_path + '/support/reaction_mapformula_nonrev.pkl'
+#reaction_mapformulapkl_path = script_path + '/support/reaction_mapformula.pkl'
+reaction_mapformulapkl_path = script_path + '/support/reaction_mapformula_nonrev.pkl'
 reaction_dictionary = pickle.load(open(reaction_mapformulapkl_path, 'rb'))
 
 # Read in pickled compound name dictionary
@@ -538,8 +549,8 @@ reaction_graph, ko_input_dict, ko_output_dict, compound_lst = network_dictionari
 #---------------------------------------------------------------------------------------#	
 
 # Write compounds and enzymes to files
-write_list('none', compound_lst, 'compound.lst')
-write_list('none', KO_lst, 'enzyme.lst')
+write_list_short('none', compound_lst, 'compound.lst')
+write_list_short('none', KO_lst, 'enzyme.lst')
 
 # Write network to a two column matrix for use in Neo4j or R
 write_list('none', reaction_graph, 'bipartite_graph.txt')
@@ -586,7 +597,7 @@ if iterations > 1:
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to files...\n'
 	outname = file_name + '.monte_carlo.score.txt'
-	write_list('Compound_code	Compound_name	Input_metabolite_score	Outdegree	Input_Significance	Output_metabolite_score	Indegree	Output_Significance\n', final_input, outname)
+	write_list('Compound_code	Compound_name	Input_metabolite_score	Outdegree	Input_Significance	Output_metabolite_score	Indegree	Output_Significance\n', final_data, outname)
 	
 
 # If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
