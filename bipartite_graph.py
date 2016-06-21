@@ -90,13 +90,13 @@ elif min_indegree < 0:
 elif min_outdegree < 0:
 	print 'Invalid degree minimum. Aborting.'
 	sys.exit()
-elif iterations < 0:
+elif iterations < 1:
 	print 'Invalid iteration value. Aborting.'
 	sys.exit()
 	
 #---------------------------------------------------------------------------------------#			
 
-# Define functions
+# Define the functions. Protect the land.
 
 # Function to write lists to files	
 def write_list(header, out_lst, file_name):
@@ -496,7 +496,7 @@ def confidence_interval(input_score_dict, output_score_dict, interval_lst, degre
 
 ##########################################################################################		
 #																						 #
-# 									  DO THE WORK										 #
+# 										 DO WORK										 #
 #																						 #
 ##########################################################################################		
 
@@ -626,3 +626,5 @@ else :
 	print '\n'
 	
 print 'Output files located in: ' + directory + '\n\n'
+
+# Enjoy the data!
