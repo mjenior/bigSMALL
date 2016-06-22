@@ -426,13 +426,13 @@ def confidence_interval(input_score_dict, output_score_dict, interval_lst, degre
 				if input_score > (input_mean + (input_std_dev * 2)):
 				
 					if input_score > (input_mean + (input_std_dev * 3)):
-						input_relation = '***'	
+						input_relation = 3	
 					else:
-						input_relation = '**'
+						input_relation = 2
 				else:
-					input_relation = '*'
+					input_relation = 1
 			else:
-				input_relation = 'n.s.'
+				input_relation = 0
 		
 		elif input_score < input_mean:
 		
@@ -441,16 +441,16 @@ def confidence_interval(input_score_dict, output_score_dict, interval_lst, degre
 				if input_score < (input_mean - (input_std_dev * 2)):
 				
 					if input_score < (input_mean - (input_std_dev * 3)):
-						input_relation = '***'	
+						input_relation = 3	
 					else:
-						input_relation = '**'
+						input_relation = 2
 				else:
-					input_relation = '*'
+					input_relation = 1
 			else:
-				input_relation = 'n.s.'
+				input_relation = 0
 	
 		else:
-			input_relation = 'n.s.'
+			input_relation = 0
 
 		output_std_dev = index[3]
 		output_mean = index[4]
@@ -464,13 +464,13 @@ def confidence_interval(input_score_dict, output_score_dict, interval_lst, degre
 				if output_score > (output_mean + (output_std_dev * 2)):
 				
 					if output_score > (output_mean + (output_std_dev * 3)):
-						output_relation = '***'	
+						output_relation = 3	
 					else:
-						output_relation = '**'
+						output_relation = 2
 				else:
-					output_relation = '*'
+					output_relation = 1
 			else:
-				output_relation = 'n.s.'
+				output_relation = 0
 		
 		elif output_score < output_mean:
 		
@@ -479,15 +479,15 @@ def confidence_interval(input_score_dict, output_score_dict, interval_lst, degre
 				if output_score < (output_mean - (output_std_dev * 2)):
 				
 					if output_score < (output_mean - (output_std_dev * 3)):
-						output_relation = '***'	
+						output_relation = 3	
 					else:
-						output_relation = '**'
+						output_relation = 2
 				else:
-					output_relation = '*'
+					output_relation = 1
 			else:
-				output_relation = 'n.s.'
+				output_relation = 0
 		else:
-			output_relation = 'n.s.'
+			output_relation = 0
 
 		labeled_confidence.append([current_compound, current_name, final_input_score, current_outdegree, input_relation, final_output_score, current_indegree, output_relation])	
 
@@ -597,7 +597,7 @@ if iterations > 1:
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to files...\n'
 	outname = file_name + '.monte_carlo.score.txt'
-	write_list('Compound_code	Compound_name	Input_metabolite_score	Outdegree	Input_Significance	Output_metabolite_score	Indegree	Output_Significance\n', final_data, outname)
+	write_list('Compound_code	Compound_name	Input_metabolite_score	Outdegree	StD_from_Sim_Input_Mean	Output_metabolite_score	Indegree	StD_from_Sim_Output_Mean\n', final_data, outname)
 	
 
 # If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
