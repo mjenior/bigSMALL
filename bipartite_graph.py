@@ -30,10 +30,7 @@ based on the expression of surrounding enzyme nodes.
 	# A text file containing user defined parameters
 	# List of unique compound nodes
 	# List of unique enzymes nodes
-	# 4 files with information derived from the network:
-	#	1.  Input metabolite score (including confidence interval when applicable)
-	#	2.  Output metabolite score (including confidence interval when applicable)
-	#	3.  Description of network topology for each node (indegree and outdegree)
+	# A table containing importance values, node topology, and relationship to simulated means
 
 #---------------------------------------------------------------------------------------#		
 
