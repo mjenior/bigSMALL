@@ -23,6 +23,7 @@ based on the expression of surrounding enzyme nodes.
 # K03454		4492
 # K10021		183
 # ...
+# Kx 			y
 
 # Generate files:  A new directory in ./ ending in ".bipartite.files" that contains all output including:
 	# A 2 column directed, bipartite network file of compounds and enzymes
@@ -55,18 +56,12 @@ start = time.time()
 parser = argparse.ArgumentParser(description='Generate bipartite metabolic models and calculates importance of substrate nodes based on gene expression.')
 parser.add_argument('input_file')
 parser.add_argument('--name', default='organism', help='Organism or other name for KO+expression file (default is organism)')
-parser.add_argument('--min', default=0, help='minimum substrate importance value')
-parser.add_argument('--indegree', default=0, help='minimum output connections for a substrate')
-parser.add_argument('--outdegree', default=0, help='minimum input connections for a substrate')
 parser.add_argument('--iters', default=1, help='iterations for random distribution subsampling')
 args = parser.parse_args()
 
 # Assign variables
 KO_input_file = str(args.input_file)
 file_name = str(args.name)
-min_score = int(args.min)
-min_indegree = int(args.indegree)
-min_outdegree = int(args.outdegree)
 iterations = int(args.iters)
 
 #---------------------------------------------------------------------------------------#			
@@ -78,22 +73,13 @@ if KO_input_file == 'input_file':
 elif os.stat(KO_input_file).st_size == 0:
 	print('Empty input file provided. Aborting.')
 	sys.exit()
-elif min_score < 0:
-	print 'Invalid importance minimum. Aborting.'
-	sys.exit()
-elif min_indegree < 0:
-	print 'Invalid degree minimum. Aborting.'
-	sys.exit()
-elif min_outdegree < 0:
-	print 'Invalid degree minimum. Aborting.'
-	sys.exit()
 elif iterations < 1:
 	print 'Invalid iteration value. Aborting.'
 	sys.exit()
 	
 #---------------------------------------------------------------------------------------#			
 
-# Define the functions. Protect the land.
+# Define the functions. Secure the land.
 
 # Function to write lists to files	
 def write_list(header, out_lst, file_name):
@@ -290,17 +276,15 @@ def compile_scores(transcript_dictionary, ko_input_dict, ko_output_dict, compoun
 
 
 # Calculate input and output scores and well as degree of each compound node
-def calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dict, min_score, min_indegree, min_outdegree, compound_lst):
+def calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dict, compound_lst):
 	
-	input_score_dict = {}
-	output_score_dict = {}
+	score_dict = {}
 	degree_dict = {}
 		
 	# Calculate cumulative scores for all compounds as inputs or outputs
 	for compound in compound_lst:
 	
-		input_score_dict[compound] = []
-		output_score_dict[compound] = []
+		score_dict[compound] = []
 		degree_dict[compound] = []
 		
 		compound_name = compound_name_dict[compound]
@@ -311,7 +295,6 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 		
 		if outdegree == 0.0:
 			input_score = 0.0
-			input_score = 0.0
 		else:
 			input_score = math.sqrt(input_transcription) / outdegree
 		if indegree == 0.0:
@@ -321,33 +304,27 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 		
 		input_score = float("%.3f" % input_score)
 		output_score = float("%.3f" % output_score)
+		final_score = input_score - output_score
 		
-		if input_score >= min_score:
-			input_score_dict[compound].extend((compound_name, input_score, indegree, outdegree))
-		if output_score >= min_score:
-			output_score_dict[compound].extend((compound_name, output_score, indegree, outdegree))
-		
-		if indegree >= min_indegree and outdegree >= min_outdegree:
-			degree_dict[compound].extend((compound_name, indegree, outdegree))	
+		score_dict[compound].extend((compound_name, final_score))
+		degree_dict[compound].extend((compound_name, indegree, outdegree))	
 					
-	return input_score_dict, output_score_dict, degree_dict
+	return score_dict, degree_dict
 
 	
 # Perform iterative Monte Carlo simulation to create confidence interval for compound importance values
-def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations, compound_name_dict, min_score, min_indegree, min_outdegree, seq_total, seq_max, compound_lst, transcript_distribution_lst):
+def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations, compound_name_dict, seq_total, seq_max, compound_lst, transcript_distribution_lst):
 	
 	gene_count = len(kos)
-	probability = 1.0 / gene_count
 	
 	# Generates a random negative binomial distribution to sample from, way too high for my expression values
-	#distribution = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
-	#distribution = [i for i in distribution if i < seq_max]  # screen for transcript mapping greater than largest value actually sequenced
+	#probability = 1.0 / gene_count
+	#transcript_distribution_lst = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
+	#transcript_distribution_lst = [i for i in distribution if i < seq_max]  # screen for transcript mapping greater than largest value actually sequenced
 	
-	input_distribution_dict = {}
-	output_distribution_dict = {}
+	distribution_dict = {}
 	for compound in compound_lst:
-		input_distribution_dict[compound] = []
-		output_distribution_dict[compound] = []
+		distribution_dict[compound] = []
 	
 	increment = 100.0 / float(iterations + len(compound_lst))
 	progress = 0.0
@@ -356,7 +333,6 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 	
 	for current in range(0, iterations):
 			
-		#sim_transcriptome = random.sample(distribution, gene_count)
 		sim_transcriptome = random.sample(transcript_distribution_lst, gene_count)
 		
 		sim_transcript_dict = {}
@@ -364,12 +340,11 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 			sim_transcript_dict[kos[index]] = sim_transcriptome[index]
 		
 		substrate_dict, degree_dict = compile_scores(sim_transcript_dict, ko_input_dict, ko_output_dict, compound_lst, kos)
-		input_score_dict, output_score_dict, degree_dict = calculate_score(substrate_dict, degree_dict, compound_name_dict, min_score, min_indegree, min_outdegree, compound_lst)
+		score_dict, degree_dict = calculate_score(substrate_dict, degree_dict, compound_name_dict, compound_lst)
 		
 		# Make dictionaries of scores for each compound for each direction
 		for compound in compound_lst:
-			input_distribution_dict[compound].append(input_score_dict[compound][1])
-			output_distribution_dict[compound].append(output_score_dict[compound][1])
+			distribution_dict[compound].append(score_dict[compound][1])
 		
 		progress += increment
 		progress = float("%.3f" % progress)
@@ -380,12 +355,10 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 	interval_lst = []
 	for compound in compound_lst:
 
-		input_current_mean = float("%.3f" % (numpy.mean(input_distribution_dict[compound])))
-		input_current_std = float("%.3f" % (numpy.std(input_distribution_dict[compound])))
-		output_current_mean = float("%.3f" % (numpy.mean(output_distribution_dict[compound])))
-		output_current_std = float("%.3f" % (numpy.std(output_distribution_dict[compound])))
+		current_mean = float("%.3f" % (numpy.mean(distribution_dict[compound])))
+		current_std = float("%.3f" % (numpy.std(distribution_dict[compound])))
 
-		interval_lst.append([compound, input_current_mean, input_current_std, output_current_mean, output_current_std])
+		interval_lst.append([compound, current_mean, current_std])
 
 		progress += increment
 		progress = float("%.3f" % progress)
@@ -400,93 +373,55 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 
 
 # Assesses measured values against confidence interval from Monte Carlo simulation 
-def confidence_interval(input_score_dict, output_score_dict, interval_lst, degree_dict):
+def confidence_interval(score_dict, interval_lst, degree_dict):
 
 	labeled_confidence = []
 
 	for index in interval_lst:
 		
 		current_compound = index[0]
-		current_name = input_score_dict[current_compound][0]
+		current_name = score_dict[current_compound][0]
 		current_indegree = degree_dict[current_compound][1]
 		current_outdegree = degree_dict[current_compound][2]
 		
-		input_std_dev = index[1]
-		input_mean = index[2]
-		input_score = input_score_dict[current_compound][1]
-		final_input_score = str(float(input_score) - float(input_mean))
+		current_mean = index[1]
+		current_std_dev = index[2]
+		current_score = score_dict[current_compound][1]
 		
-		if input_score > input_mean:
+		if current_score > current_mean:
 		
-			if input_score > (input_mean + input_std_dev):
+			if current_score > (current_mean + current_std_dev):
 			
-				if input_score > (input_mean + (input_std_dev * 2)):
+				if current_score > (current_mean + (current_std_dev * 2)):
 				
-					if input_score > (input_mean + (input_std_dev * 3)):
-						input_relation = 3	
+					if current_score > (current_mean + (current_std_dev * 3)):
+						current_relation = 3	
 					else:
-						input_relation = 2
+						current_relation = 2
 				else:
-					input_relation = 1
+					current_relation = 1
 			else:
-				input_relation = 0
+				current_relation = 0
 		
-		elif input_score < input_mean:
+		elif current_score < current_mean:
 		
-			if input_score < (input_mean - input_std_dev):
+			if current_score < (current_mean - current_std_dev):
 			
-				if input_score < (input_mean - (input_std_dev * 2)):
+				if current_score < (current_mean - (current_std_dev * 2)):
 				
-					if input_score < (input_mean - (input_std_dev * 3)):
-						input_relation = 3	
+					if current_score < (current_mean - (current_std_dev * 3)):
+						current_relation = 3	
 					else:
-						input_relation = 2
+						current_relation = 2
 				else:
-					input_relation = 1
+					current_relation = 1
 			else:
-				input_relation = 0
+				current_relation = 0
 	
 		else:
-			input_relation = 0
+			current_relation = 0
 
-		output_std_dev = index[3]
-		output_mean = index[4]
-		output_score = output_score_dict[current_compound][1]
-		final_output_score = str(float(output_score) - float(output_mean))
-		
-		if output_score > output_mean:
-		
-			if output_score > (output_mean + output_std_dev):
-			
-				if output_score > (output_mean + (output_std_dev * 2)):
-				
-					if output_score > (output_mean + (output_std_dev * 3)):
-						output_relation = 3	
-					else:
-						output_relation = 2
-				else:
-					output_relation = 1
-			else:
-				output_relation = 0
-		
-		elif output_score < output_mean:
-		
-			if output_score < (output_mean - output_std_dev):
-			
-				if output_score < (output_mean - (output_std_dev * 2)):
-				
-					if output_score < (output_mean - (output_std_dev * 3)):
-						output_relation = 3	
-					else:
-						output_relation = 2
-				else:
-					output_relation = 1
-			else:
-				output_relation = 0
-		else:
-			output_relation = 0
-
-		labeled_confidence.append([current_compound, current_name, final_input_score, current_outdegree, input_relation, final_output_score, current_indegree, output_relation])	
+		labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_relation])	
 
 	return labeled_confidence
 
@@ -504,7 +439,7 @@ if file_name != 'organism':
 
 # Read in and create dictionary for expression
 with open(KO_input_file, 'r') as KO_file:
-	transcript_dict, total, max, transcript_distribution_lst = transcription_dictionary(KO_file)
+	transcript_dict, total, seq_max, transcript_distribution_lst = transcription_dictionary(KO_file)
 KO_lst = transcript_dict.keys()
 
 #---------------------------------------------------------------------------------------#		
@@ -565,47 +500,46 @@ with open('parameters.txt', 'w') as parameter_file:
 	outputString = '''User Defined Parameters
 KO expression file: {ko}
 Graph name: {name}
-Minimum compound importance: {imp}
-Minimum input edges per node: {outdeg}
-Minimum output edges per node: {indeg}
 KEGG ortholog nodes: {kos}
 Substrate nodes: {substrate}
 Monte Carlo simulation iterations: {iter}
-'''.format(ko=str(KO_input_file), name=str(file_name), imp=str(min_score), outdeg=str(min_outdegree), indeg=str(min_indegree), iter=iter_str, kos=str(len(KO_lst)), substrate=str(len(compound_lst)))
+'''.format(ko=str(KO_input_file), name=str(file_name), iter=iter_str, kos=str(len(KO_lst)), substrate=str(len(compound_lst)))
 	parameter_file.write(outputString)
+
 #---------------------------------------------------------------------------------------#	
 
 # Calculate actual importance scores for each compound in the network
 print 'Calculating compound node connectedness and metabolite scores...\n'
 compound_transcript_dict, compound_degree_dict = compile_scores(transcript_dict, ko_input_dict, ko_output_dict, compound_lst, KO_lst)
-input_score_dict, output_score_dict, degree_dict = calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dictionary, min_score, min_indegree, min_outdegree, compound_lst)
+score_dict, degree_dict = calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dictionary, compound_lst)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
 
 # Calculate simulated importance values if specified
 if iterations > 1:
-
 	print 'Comparing to simulated transcript distribution...\n'	
-	interval_lst = monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, KO_lst, iterations, compound_name_dictionary, min_score, min_indegree, min_outdegree, total, max, compound_lst, transcript_distribution_lst)
-	final_data = confidence_interval(input_score_dict, output_score_dict, interval_lst, degree_dict)
+	interval_lst = monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, KO_lst, iterations, compound_name_dictionary, total, seq_max, compound_lst, transcript_distribution_lst)
+	final_data = confidence_interval(score_dict, interval_lst, degree_dict)
 	print 'Done.\n'
 	
 	# Write all the calculated data to files
-	print 'Writing score data with Monte Carlo simulation to files...\n'
+	print 'Writing score data with Monte Carlo simulation to a file...\n'
 	outname = file_name + '.monte_carlo.score.txt'
-	write_list('Compound_code	Compound_name	Input_metabolite_score	Outdegree	StD_from_Sim_Input_Mean	Output_metabolite_score	Indegree	StD_from_Sim_Output_Mean\n', final_data, outname)
-	
+	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Mean\tStD_from_Sim_Mean\n', final_data, outname)
+
 
 # If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
 else:
-	print 'Writing score data to files...\n' 
-	outname = file_name + '.input_score.txt'
-	write_dictionary('Compound_code	Compound_name	Input_metabolite_score	Outdegree\n', input_score_dict, outname)
-
-	outname = file_name + '.output_score.txt'
-	write_dictionary('Compound_code	Compound_name	Output_metabolite_score	Indegrees\n', output_score_dict, outname)
+	print 'Writing score data to a file...\n' 
+	outname = file_name + '.score.txt'
+	write_dictionary('Compound_code\tCompound_name\tMetabolite_score\n', score_dict, outname)
 	print 'Done.\n'
+
+print 'Writing network topology to a file...\n'
+outname = file_name + '.topology.txt'
+write_dictionary('Compound_code\tCompound_name\tIndegree\tOutdegree\n', degree_dict, outname)
+print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
 
@@ -625,3 +559,5 @@ else :
 print 'Output files located in: ' + directory + '\n\n'
 
 # Enjoy the data!
+
+
