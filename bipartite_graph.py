@@ -121,6 +121,18 @@ def write_dictionary(header, out_dict, file_name):
 			elements[-1] = elements[-1] + '\n'
 			out_file.write('\t'.join(elements))
 
+def write_dictionary_short(header, out_dict, file_name):
+
+	all_keys = out_dict.keys()
+	
+	with open(file_name, 'w') as out_file: 
+		
+		if not header == 'none': out_file.write(header)
+			
+		for index in all_keys:
+			entry = index + '\t' + str(out_dict[index]) + '\n'
+			out_file.write(entry)
+
 
 # Create a dictionary for transcript value associated with its KO
 def transcription_dictionary(KO_file):
@@ -539,7 +551,7 @@ print 'Writing network topology and original transcipt counts to files...\n'
 outname = file_name + '.topology.txt'
 write_dictionary('Compound_code\tCompound_name\tIndegree\tOutdegree\n', degree_dict, outname)
 outname = file_name + '.original_mapping.txt'
-write_dictionary('KO_code\tTranscripts\n', transcript_dict, outname)
+write_dictionary_short('KO_code\tTranscripts\n', transcript_dict, outname)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
