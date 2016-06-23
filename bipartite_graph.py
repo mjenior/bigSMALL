@@ -100,7 +100,7 @@ def write_list_short(header, out_lst, file_name):
 		if not header == 'none': out_file.write(header)
 			
 		for index in out_lst:
-			index = [str(x) for x in index]
+			index = [str(int(x)) for x in index]
 			index[-1] = str(index[-1]) + '\n'
 			out_file.write(''.join(index))
 			
