@@ -133,7 +133,7 @@ def transcription_dictionary(KO_file):
 	for line in KO_file:
 		entry = line.split()
 		
-		ko = str(entry[0])
+		ko = str(entry[0]).strip('ko:')
 		expression = float(entry[1])
 		
 		seq_total += expression
@@ -173,9 +173,8 @@ def network_dictionaries(KOs, ko_dict, reaction_dict):
 	
 	with open('key_error.log', 'w') as errorfile:
 	
-		for line in KOs:
+		for current_ko in KOs:
 	
-			current_ko = line.strip('ko:')
 			triedCountKO += 1
 			
 			if not current_ko in ko_input_dict:
@@ -536,9 +535,11 @@ else:
 	write_dictionary('Compound_code\tCompound_name\tMetabolite_score\n', score_dict, outname)
 	print 'Done.\n'
 
-print 'Writing network topology to a file...\n'
+print 'Writing network topology and original transcipt counts to files...\n'
 outname = file_name + '.topology.txt'
 write_dictionary('Compound_code\tCompound_name\tIndegree\tOutdegree\n', degree_dict, outname)
+outname = file_name + '.original_mapping.txt'
+write_dictionary('KO_code\tTranscripts\n', transcript_dict, outname)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
