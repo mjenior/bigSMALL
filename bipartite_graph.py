@@ -100,7 +100,7 @@ def write_list_short(header, out_lst, file_name):
 		if not header == 'none': out_file.write(header)
 			
 		for index in out_lst:
-			index = [str(int(x)) for x in index]
+			index = [str(x) for x in index]
 			index[-1] = str(index[-1]) + '\n'
 			out_file.write(''.join(index))
 			
@@ -120,6 +120,19 @@ def write_dictionary(header, out_dict, file_name):
 			elements = [str(x) for x in elements]
 			elements[-1] = elements[-1] + '\n'
 			out_file.write('\t'.join(elements))
+
+def write_dictionary_short(header, out_dict, file_name):
+
+	all_keys = out_dict.keys()
+	
+	with open(file_name, 'w') as out_file: 
+		
+		if not header == 'none': out_file.write(header)
+			
+		for index in all_keys:
+			element = str(out_dict[index]) + '\n'
+			entry = [index, element]
+			out_file.write('\t'.join(entry))
 
 
 # Create a dictionary for transcript value associated with its KO
@@ -539,14 +552,14 @@ if iterations > 1:
 else:
 	print 'Writing score data to a file...\n' 
 	outname = file_name + '.score.txt'
-	write_dictionary('Compound_code\tCompound_name\tMetabolite_score\n', score_dict, outname)
+	write_dictionary_short('Compound_code\tCompound_name\tMetabolite_score\n', score_dict, outname)
 	print 'Done.\n'
 
 print 'Writing network topology and original transcipt counts to files...\n'
 outname = file_name + '.topology.txt'
 write_dictionary('Compound_code\tCompound_name\tIndegree\tOutdegree\n', degree_dict, outname)
-outname = file_name + '.original_mapping.txt'
-write_dictionary('KO_code\tTranscripts\n', transcript_dict, outname)
+outname = file_name + '.mapping.txt'
+write_dictionary_short('KO_code\tTranscripts\n', transcript_dict, outname)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
