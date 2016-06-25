@@ -305,10 +305,10 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 		output_score = float("%.3f" % output_score)
 		score_difference = input_score - output_score
 
-		if score_difference <= -1:
-			final_score = float("%.3f" % math.sqrt(abs(score_difference))) * -1
-		elif score_difference < 1 and score_difference > -1:
-			final_score = 0
+		if score_difference <= -1.0:
+			final_score = float("%.3f" % math.sqrt(abs(score_difference))) * -1.0
+		elif score_difference < 1.0 and score_difference > -1.0:
+			final_score = 0.0
 		else:
 			final_score = float("%.3f" % math.sqrt(score_difference))
 
