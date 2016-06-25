@@ -280,7 +280,7 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 	score_dict = {}
 	degree_dict = {}
 		
-	# Calculate cumulative scores for all compounds as inputs or outputs
+	# Calculate metabolite scores integrating input and output reactions weightings
 	for compound in compound_lst:
 	
 		score_dict[compound] = []
@@ -295,16 +295,17 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 		if outdegree == 0.0:
 			input_score = 0.0
 		else:
-			input_score = math.sqrt(input_transcription) / outdegree
+			input_score = input_transcription / outdegree
 		if indegree == 0.0:
 			output_score = 0.0
 		else:
-			output_score = math.sqrt(output_transcription) / indegree
+			output_score = output_transcription / indegree
 		
 		input_score = float("%.3f" % input_score)
 		output_score = float("%.3f" % output_score)
 		final_score = input_score - output_score
-		
+		final_score = float("%.3f" % math.sqrt(final_score))
+
 		score_dict[compound].extend((compound_name, final_score))
 		degree_dict[compound].extend((compound_name, indegree, outdegree))	
 					
