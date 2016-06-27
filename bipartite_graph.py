@@ -100,7 +100,7 @@ def write_list_short(header, out_lst, file_name):
 		if not header == 'none': out_file.write(header)
 			
 		for index in out_lst:
-			index = [str(int(x)) for x in index]
+			index = [str(x) for x in index]
 			index[-1] = str(index[-1]) + '\n'
 			out_file.write(''.join(index))
 			
@@ -130,8 +130,14 @@ def write_dictionary_short(header, out_dict, file_name):
 		if not header == 'none': out_file.write(header)
 			
 		for index in all_keys:
+<<<<<<< HEAD
 			entry = index + '\t' + str(out_dict[index]) + '\n'
 			out_file.write(entry)
+=======
+			element = str(out_dict[index]) + '\n'
+			entry = [index, element]
+			out_file.write('\t'.join(entry))
+>>>>>>> master
 
 
 # Create a dictionary for transcript value associated with its KO
@@ -292,7 +298,7 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 	score_dict = {}
 	degree_dict = {}
 		
-	# Calculate cumulative scores for all compounds as inputs or outputs
+	# Calculate metabolite scores integrating input and output reactions weightings
 	for compound in compound_lst:
 	
 		score_dict[compound] = []
@@ -307,16 +313,23 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 		if outdegree == 0.0:
 			input_score = 0.0
 		else:
-			input_score = math.sqrt(input_transcription) / outdegree
+			input_score = input_transcription / outdegree
 		if indegree == 0.0:
 			output_score = 0.0
 		else:
-			output_score = math.sqrt(output_transcription) / indegree
+			output_score = output_transcription / indegree
 		
 		input_score = float("%.3f" % input_score)
 		output_score = float("%.3f" % output_score)
-		final_score = input_score - output_score
-		
+		score_difference = input_score - output_score
+
+		if score_difference <= -1.0:
+			final_score = float("%.3f" % math.sqrt(abs(score_difference))) * -1.0
+		elif score_difference < 1.0 and score_difference > -1.0:
+			final_score = 0.0
+		else:
+			final_score = float("%.3f" % math.sqrt(score_difference))
+
 		score_dict[compound].extend((compound_name, final_score))
 		degree_dict[compound].extend((compound_name, indegree, outdegree))	
 					
@@ -544,13 +557,17 @@ if iterations > 1:
 else:
 	print 'Writing score data to a file...\n' 
 	outname = file_name + '.score.txt'
-	write_dictionary('Compound_code\tCompound_name\tMetabolite_score\n', score_dict, outname)
+	write_dictionary_short('Compound_code\tCompound_name\tMetabolite_score\n', score_dict, outname)
 	print 'Done.\n'
 
 print 'Writing network topology and original transcipt counts to files...\n'
 outname = file_name + '.topology.txt'
 write_dictionary('Compound_code\tCompound_name\tIndegree\tOutdegree\n', degree_dict, outname)
+<<<<<<< HEAD
 outname = file_name + '.original_mapping.txt'
+=======
+outname = file_name + '.mapping.txt'
+>>>>>>> master
 write_dictionary_short('KO_code\tTranscripts\n', transcript_dict, outname)
 print 'Done.\n'
 
