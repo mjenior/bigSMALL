@@ -11,9 +11,10 @@ based on the expression of surrounding enzyme nodes.
 # expression of local enzymes and degree of connectedness of each compound node in the calculation.  
 # Relative importance of each surrounding compound node is then calculated by dividing the sum of 
 # surrounding transcripts (the eigenvalue) by the number of edges connected to the node of interest.  
-# This is repeated respective to incoming, outgoing, and combined edges.  A Negative Binomial
-# distribution of simulated transcript abundance is then created and repeatedly subsampled from  
-# to generate confidence interval for to compare the measured values against.
+# This is repeated respective to incoming and outgoing edges.  Output scores are then subtracted 
+# from input values then log2 transformed.  A simulated distribution of transcript abundance is 
+# then created and repeatedly subsampled to generate confidence interval to compare the calculated 
+# importances against and highlight compounds scoring outside a random interval.
 
 # Dependencies:  
 # The script itself needs to be run from from a directory containing the /support/ sub-directory
@@ -23,7 +24,7 @@ based on the expression of surrounding enzyme nodes.
 # K03454		4492
 # K10021		183
 # ...
-# Kx 			y
+# Knnnnn 		n
 
 # Generate files:  A new directory in ./ ending in ".bipartite.files" that contains all output including:
 	# A 2 column directed, bipartite network file of compounds and enzymes
@@ -52,7 +53,7 @@ start = time.time()
 
 #---------------------------------------------------------------------------------------#		
 
-# Define arguments
+# User defined arguments
 parser = argparse.ArgumentParser(description='Generate bipartite metabolic models and calculates importance of substrate nodes based on gene expression.')
 parser.add_argument('input_file')
 parser.add_argument('--name', default='organism', help='Organism or other name for KO+expression file (default is organism)')
@@ -76,10 +77,13 @@ elif os.stat(KO_input_file).st_size == 0:
 elif iterations < 1:
 	print 'Invalid iteration value. Aborting.'
 	sys.exit()
+elif file_name == '':
+	print 'You used the --name argument and then provided nothing. Not aborting.'
+	file_name = 'you_forgot_to_name_your_flipping_files'
 	
 #---------------------------------------------------------------------------------------#			
 
-# Define the functions. Secure the land.
+# Define all the functions!
 
 # Function to write lists to files	
 def write_list(header, out_lst, file_name):
@@ -589,6 +593,6 @@ else :
 	
 print 'Output files located in: ' + directory + '\n\n'
 
-# Enjoy the data!
+# Enjoy the data, ya filthy animal!
 
 
