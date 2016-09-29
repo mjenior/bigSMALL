@@ -450,7 +450,7 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		else:
 			current_relation = 0
 
-		labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, current_relation])	
+		labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev])	
 
 	return labeled_confidence
 
@@ -555,7 +555,7 @@ if iterations > 1:
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to a file...\n'
 	outname = file_name + '.monte_carlo.score.txt'
-	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Mean\tSim_StD\tStDs_from_Sim_Mean\n', final_data, outname)
+	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Mean\tSim_StD\n', final_data, outname)
 
 
 # If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
