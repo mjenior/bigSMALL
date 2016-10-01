@@ -134,14 +134,14 @@ def write_dictionary_short(header, out_dict, file_name):
 		if not header == 'none': out_file.write(header)
 			
 		for index in all_keys:
-<<<<<<< HEAD
+
 			entry = index + '\t' + str(out_dict[index]) + '\n'
 			out_file.write(entry)
-=======
+
 			element = str(out_dict[index]) + '\n'
 			entry = [index, element]
 			out_file.write('\t'.join(entry))
->>>>>>> master
+
 
 
 # Create a dictionary for transcript value associated with its KO
@@ -347,8 +347,8 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 	gene_count = len(kos)
 	
 	# Generates a random negative binomial distribution to sample from, way too high for my expression values
-	#probability = 1.0 / gene_count
-	#transcript_distribution_lst = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
+	probability = 1.0 / gene_count
+	transcript_distribution_lst = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
 	#transcript_distribution_lst = [i for i in distribution if i < seq_max]  # screen for transcript mapping greater than largest value actually sequenced
 	
 	distribution_dict = {}

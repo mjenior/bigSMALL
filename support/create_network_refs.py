@@ -174,6 +174,9 @@ with open(substrate,'r') as compounds:
 			name = '_'.join(line[1:]).rstrip(';')
 			if not entry in compound_dict.keys():
 				compound_dict[entry] = name
+
+
+		# Need to add substrate classifications to names, separated by ;
 		
 print('Complete.\n')
 
