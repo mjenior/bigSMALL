@@ -33,6 +33,7 @@ based on the expression of surrounding enzyme nodes.
 	# List of unique compound nodes
 	# List of unique enzymes nodes
 	# A table containing importance values, node topology, and relationship to simulated means
+	# A matrix of values generated during iterative Monte Carlo simulation
 
 #---------------------------------------------------------------------------------------#		
 
@@ -97,6 +98,9 @@ def write_list(header, out_lst, file_name):
 			index[-1] = str(index[-1]) + '\n'
 			out_file.write('\t'.join(index))
 
+	out_file.close()
+
+
 def write_list_short(header, out_lst, file_name):
 
 	with open(file_name, 'w') as out_file: 
@@ -107,6 +111,8 @@ def write_list_short(header, out_lst, file_name):
 			index = [str(x) for x in index]
 			index[-1] = str(index[-1]) + '\n'
 			out_file.write(''.join(index))
+
+	out_file.close()
 			
 
 # Function to write dictionaries to files	
@@ -125,6 +131,9 @@ def write_dictionary(header, out_dict, file_name):
 			elements[-1] = elements[-1] + '\n'
 			out_file.write('\t'.join(elements))
 
+	out_file.close()
+
+
 def write_dictionary_short(header, out_dict, file_name):
 
 	all_keys = out_dict.keys()
@@ -142,6 +151,7 @@ def write_dictionary_short(header, out_dict, file_name):
 			entry = [index, element]
 			out_file.write('\t'.join(entry))
 
+	out_file.close()
 
 
 # Create a dictionary for transcript value associated with its KO
@@ -264,6 +274,7 @@ Reactions unsuccessfully translated to Compounds: {Reaction_failed}
 	network_list = [list(x) for x in set(tuple(x) for x in network_list)]  # List of unique edges (KOs and compounds)
 	compound_lst = list(set(compound_lst))
 	
+	errorfile.close()
 	print('Done.\n')
 	
 	return network_list, ko_input_dict, ko_output_dict, compound_lst
@@ -344,12 +355,14 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 # Perform iterative Monte Carlo simulation to create confidence interval for compound importance values
 def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations, compound_name_dict, seq_total, seq_max, compound_lst, transcript_distribution_lst):
 	
+	# Need to create file to record simulated distributions
+	simulation_file = open('simulated_abundances.txt', 'w') 
+
+	simulation_str = 'iteration\t' + '\t'.join(kos) + '\n'
+	simulation_file.write(simulation_str)
+
 	gene_count = len(kos)
-	
-	# Generates a random negative binomial distribution to sample from, way too high for my expression values
-	probability = 1.0 / gene_count
-	transcript_distribution_lst = list(numpy.random.negative_binomial(1, probability, seq_total))  # Negative Binomial distribution
-	#transcript_distribution_lst = [i for i in distribution if i < seq_max]  # screen for transcript mapping greater than largest value actually sequenced
+	probability = gene_count / seq_total
 	
 	distribution_dict = {}
 	for compound in compound_lst:
@@ -362,8 +375,9 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 	
 	for current in range(0, iterations):
 			
-		sim_transcriptome = random.sample(transcript_distribution_lst, gene_count)
-		
+		sim_transcriptome = list(numpy.random.negative_binomial(1, probability, gene_count)) # create new random distribution
+		sim_transcriptome = random.sample(sim_transcriptome, gene_count) # shuffle the abundances
+
 		sim_transcript_dict = {}
 		for index in range(0, gene_count):
 			sim_transcript_dict[kos[index]] = sim_transcriptome[index]
@@ -375,6 +389,9 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 		for compound in compound_lst:
 			distribution_dict[compound].append(score_dict[compound][1])
 		
+		simulation_str = 'iter_' + str(current) + '\t' + '\t'.join([str(x) for x in sim_transcriptome]) + '\n'
+		simulation_file.write(simulation_str)
+
 		progress += increment
 		progress = float("%.3f" % progress)
 		sys.stdout.write('\rProgress: ' + str(progress) + '%')
@@ -398,10 +415,11 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 	sys.stdout.flush()
 	print('\n')
 	
+	simulation_file.close()
 	return interval_lst
 
 
-# Assesses measured values against confidence interval from Monte Carlo simulation 
+# Compare randomized confidence intervals and format final data structures
 def confidence_interval(score_dict, interval_lst, degree_dict):
 
 	labeled_confidence = []
@@ -417,40 +435,21 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		current_std_dev = index[2]
 		current_score = score_dict[current_compound][1]
 		
-		if current_score > current_mean:
-		
-			if current_score > (current_mean + current_std_dev):
-			
-				if current_score > (current_mean + (current_std_dev * 2)):
-				
-					if current_score > (current_mean + (current_std_dev * 3)):
-						current_relation = 3	
-					else:
-						current_relation = 2
-				else:
-					current_relation = 1
-			else:
-				current_relation = 0
-		
-		elif current_score < current_mean:
-		
-			if current_score < (current_mean - current_std_dev):
-			
-				if current_score < (current_mean - (current_std_dev * 2)):
-				
-					if current_score < (current_mean - (current_std_dev * 3)):
-						current_relation = 3	
-					else:
-						current_relation = 2
-				else:
-					current_relation = 1
-			else:
-				current_relation = 0
-	
-		else:
-			current_relation = 0
+		confidence_95 = current_std_dev * 1.95
+		current_relation = 'n.s'
+		current_conf = 'none'
 
-		labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev])	
+		if current_score > current_mean:
+			current_relation = 'above'
+			if current_score > (current_mean + confidence_95):
+				current_conf = '*'
+		
+		elif current_score > current_mean:
+			current_relation = 'below'
+			if current_score < (current_mean + confidence_95):
+				current_conf = '*'
+
+		labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, current_relation, current_conf])	
 
 	return labeled_confidence
 
@@ -555,7 +554,7 @@ if iterations > 1:
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to a file...\n'
 	outname = file_name + '.monte_carlo.score.txt'
-	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Mean\tSim_StD\n', final_data, outname)
+	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Mean\tSim_StD\tRelationshiop\tConfidence\n', final_data, outname)
 
 
 # If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
@@ -568,11 +567,8 @@ else:
 print 'Writing network topology and original transcipt counts to files...\n'
 outname = file_name + '.topology.txt'
 write_dictionary('Compound_code\tCompound_name\tIndegree\tOutdegree\n', degree_dict, outname)
-<<<<<<< HEAD
 outname = file_name + '.original_mapping.txt'
-=======
 outname = file_name + '.mapping.txt'
->>>>>>> master
 write_dictionary_short('KO_code\tTranscripts\n', transcript_dict, outname)
 print 'Done.\n'
 
