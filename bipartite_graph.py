@@ -32,7 +32,7 @@ based on the expression of surrounding enzyme nodes.
 	# A text file containing user defined parameters
 	# List of unique compound nodes
 	# List of unique enzymes nodes
-	# A table containing importance values, node topology, and relationship to simulated means
+	# A table containing importance values, node topology, and relationship to simulated medians
 	# A matrix of values generated during iterative Monte Carlo simulation
 
 #---------------------------------------------------------------------------------------#		
@@ -397,14 +397,14 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 		sys.stdout.write('\rProgress: ' + str(progress) + '%')
 		sys.stdout.flush()
 			
-	# Compile the scores for each compound and take the mean and standard deviation
+	# Compile the scores for each compound and find the median and standard deviation
 	interval_lst = []
 	for compound in compound_lst:
 
-		current_mean = float("%.3f" % (numpy.mean(distribution_dict[compound])))
+		current_median = float("%.3f" % (numpy.median(distribution_dict[compound])))
 		current_std = float("%.3f" % (numpy.std(distribution_dict[compound])))
 
-		interval_lst.append([compound, current_mean, current_std])
+		interval_lst.append([compound, current_median, current_std])
 
 		progress += increment
 		progress = float("%.3f" % progress)
@@ -431,7 +431,7 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		current_indegree = degree_dict[current_compound][1]
 		current_outdegree = degree_dict[current_compound][2]
 		
-		current_mean = index[1]
+		current_median = index[1]
 		current_std_dev = index[2]
 		current_score = score_dict[current_compound][1]
 		
@@ -439,17 +439,17 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		current_relation = 'n.s'
 		current_conf = 'none'
 
-		if current_score > current_mean:
+		if current_score > current_median:
 			current_relation = 'above'
-			if current_score > (current_mean + confidence_95):
+			if current_score > (current_median + confidence_95):
 				current_conf = '*'
 		
-		elif current_score > current_mean:
+		elif current_score > current_median:
 			current_relation = 'below'
-			if current_score < (current_mean + confidence_95):
+			if current_score < (current_median + confidence_95):
 				current_conf = '*'
 
-		labeled_confidence.append([current_compound, current_name, current_score, current_mean, current_std_dev, current_relation, current_conf])	
+		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_std_dev, current_relation, current_conf])	
 
 	return labeled_confidence
 
@@ -554,7 +554,7 @@ if iterations > 1:
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to a file...\n'
 	outname = file_name + '.monte_carlo.score.txt'
-	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Mean\tSim_StD\tRelationshiop\tConfidence\n', final_data, outname)
+	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_StD\tRelationshiop\tConfidence\n', final_data, outname)
 
 
 # If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
