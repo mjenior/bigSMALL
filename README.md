@@ -5,7 +5,7 @@ Python scripts and workflow by Matthew Jenior, University of Michigan, 2014 - 20
 
 ---------------------------------------------------------------------------
 
-The function of this package is to observe putative metabolic requirements, interaction, and activity of bacteria with the intention of inferring ecological interaction
+The function of this package is to infer putative metabolites most likely acquired for the environment based on transcriptomic data mapped to KEGG orthologs. Bigsmall generates a bipartite metabolic based on the reaction data associated with each KEGG ortholog and then integrates transcript abundances to predict demand for metabolites based on the transciption of adjacent enzyme nodes. Monte Carlo simulation is also applied to create a standard of comparison that reflects random noise, where highly dinstinct measurments are more likely to be not by chance.
 
 KEGG reference files and reference creation script can be found in the support directory
 
