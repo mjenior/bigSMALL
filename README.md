@@ -1,4 +1,4 @@
-BiGSMAll or BacterIal Genome-Scale Metabolic models for AppLied reverse ecoLogy
+bigsmall or *B*acter*I*al *G*enome-*S*cale *M*etabolic models for *A*pp*L*ied reverse eco*L*ogy
 ============
 
 Python scripts and workflow by Matthew Jenior, University of Michigan, 2014 - 2016
