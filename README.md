@@ -40,13 +40,7 @@ expression_file
 
 --name NAME		Organism or other name for KO+expression file (default is organism)
 
---min MIN		minimum importance value to report
-
---degree DEGREE		minimum degree value to report
-
 --iters ITERS		iterations for random distribution subsampling
-
---type TYPE		Type of substrate score calculation to perform (1=Eigen Vector Scaling or 2=Normalization By Topology)
 
 ---------------------------------------------------------------------------
 
