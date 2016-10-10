@@ -404,7 +404,12 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 		current_median = float("%.3f" % (numpy.median(distribution_dict[compound])))
 		current_std = float("%.3f" % (numpy.std(distribution_dict[compound])))
 
-		interval_lst.append([compound, current_median, current_std])
+		# McGill et al. (1978)
+		upper, lower = numpy.percentile(distribution_dict[compound], [75, 25])
+		upper = 1.58 * (upper / len(distribution_dict[compound]))
+		lower = 1.58 * (lower / len(distribution_dict[compound]))
+
+		interval_lst.append([compound, current_median, upper, lower])
 
 		progress += increment
 		progress = float("%.3f" % progress)
@@ -432,24 +437,25 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		current_outdegree = degree_dict[current_compound][2]
 		
 		current_median = index[1]
-		current_std_dev = index[2]
+		current_upper_conf = index[2]
+		current_lower_conf = index[3]
+
 		current_score = score_dict[current_compound][1]
 		
-		confidence_95 = current_std_dev * 1.95
-		current_relation = 'n.s'
+		current_relation = 'n.s.'
 		current_conf = 'none'
 
 		if current_score > current_median:
 			current_relation = 'above'
-			if current_score > (current_median + confidence_95):
+			if current_score > current_upper_conf:
 				current_conf = '*'
 		
 		elif current_score > current_median:
 			current_relation = 'below'
-			if current_score < (current_median + confidence_95):
+			if current_score < current_lower_conf:
 				current_conf = '*'
 
-		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_std_dev, current_relation, current_conf])	
+		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_lower_conf, current_upper_conf, current_relation, current_conf])	
 
 	return labeled_confidence
 
@@ -554,7 +560,7 @@ if iterations > 1:
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to a file...\n'
 	outname = file_name + '.monte_carlo.score.txt'
-	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_StD\tRelationshiop\tConfidence\n', final_data, outname)
+	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tLower_95_interval\tUpper_95_interval\tRelationshiop\tConfidence\n', final_data, outname)
 
 
 # If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
