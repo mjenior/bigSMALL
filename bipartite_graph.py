@@ -402,14 +402,13 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 	for compound in compound_lst:
 
 		current_median = float("%.3f" % (numpy.median(distribution_dict[compound])))
-		current_std = float("%.3f" % (numpy.std(distribution_dict[compound])))
 
 		# McGill et al. (1978)
-		upper, lower = numpy.percentile(distribution_dict[compound], [75, 25])
-		upper = 1.58 * (upper / len(distribution_dict[compound]))
-		lower = 1.58 * (lower / len(distribution_dict[compound]))
+		lower, upper = numpy.percentile(distribution_dict[compound], [75, 25])
+		lower = current_median - abs(1.58 * (lower / len(distribution_dict[compound])))
+		upper = current_median + abs(1.58 * (upper / len(distribution_dict[compound])))
 
-		interval_lst.append([compound, current_median, upper, lower])
+		interval_lst.append([compound, current_median, lower, upper])
 
 		progress += increment
 		progress = float("%.3f" % progress)
@@ -436,21 +435,23 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		current_indegree = degree_dict[current_compound][1]
 		current_outdegree = degree_dict[current_compound][2]
 		
-		current_median = index[1]
-		current_upper_conf = index[2]
-		current_lower_conf = index[3]
+		current_median = float(index[1])
+		current_lower_conf = float(index[2])
+		current_upper_conf = float(index[3])
+		current_score = float(score_dict[current_compound][1])
 
-		current_score = score_dict[current_compound][1]
+		# Screen out metabolites with no importance or any due to simulation
+		if current_median == 0.0 and current_lower_conf == 0.0 and current_upper_conf == 0.0 and current_score == 0.0: continue
 		
-		current_relation = 'n.s.'
-		current_conf = 'none'
+		current_relation = 'none'
+		current_conf = 'n.s.'
 
 		if current_score > current_median:
 			current_relation = 'above'
 			if current_score > current_upper_conf:
 				current_conf = '*'
 		
-		elif current_score > current_median:
+		elif current_score < current_median:
 			current_relation = 'below'
 			if current_score < current_lower_conf:
 				current_conf = '*'
