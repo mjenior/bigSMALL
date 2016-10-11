@@ -42,6 +42,8 @@ expression_file
 
 --iters ITERS		iterations for random distribution subsampling
 
+* A good starting point is to use x10 the number of genes for --iters
+
 ---------------------------------------------------------------------------
 
 ##Under construction
