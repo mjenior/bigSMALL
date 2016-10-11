@@ -355,14 +355,14 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 # Perform iterative Monte Carlo simulation to create confidence interval for compound importance values
 def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations, compound_name_dict, seq_total, seq_max, compound_lst, transcript_distribution_lst):
 	
-	# Need to create file to record simulated distributions
+	# Create file to record simulated distributions
 	simulation_file = open('simulated_abundances.txt', 'w') 
 
 	simulation_str = 'iteration\t' + '\t'.join(kos) + '\n'
 	simulation_file.write(simulation_str)
 
 	gene_count = len(kos)
-	probability = gene_count / seq_total
+	#probability = gene_count / seq_total
 	
 	distribution_dict = {}
 	for compound in compound_lst:
@@ -375,8 +375,9 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 	
 	for current in range(0, iterations):
 			
-		sim_transcriptome = list(numpy.random.negative_binomial(1, probability, gene_count)) # create new random distribution
-		sim_transcriptome = random.sample(sim_transcriptome, gene_count) # shuffle the abundances
+		#sim_transcriptome = list(numpy.random.negative_binomial(1, probability, gene_count)) # create new random distribution
+		#sim_transcriptome = random.sample(sim_transcriptome, gene_count) # shuffle the abundances
+		sim_transcriptome = random.sample(transcript_distribution_lst, gene_count) # shuffle the abundances
 
 		sim_transcript_dict = {}
 		for index in range(0, gene_count):
@@ -404,11 +405,11 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 		current_median = float("%.3f" % (numpy.median(distribution_dict[compound])))
 
 		# McGill et al. (1978)
-		lower, upper = numpy.percentile(distribution_dict[compound], [75, 25])
-		lower = current_median - abs(1.58 * (lower / len(distribution_dict[compound])))
-		upper = current_median + abs(1.58 * (upper / len(distribution_dict[compound])))
+		upper_iqr, lower_iqr = numpy.percentile(distribution_dict[compound], [75, 25])
+		lower_95 = current_median - abs(1.58 * (lower_iqr / math.sqrt(len(distribution_dict[compound]))))
+		upper_95 = current_median + abs(1.58 * (upper_iqr / math.sqrt(len(distribution_dict[compound]))))
 
-		interval_lst.append([compound, current_median, lower, upper])
+		interval_lst.append([compound, current_median, lower_iqr, upper_iqr, lower_95, upper_95])
 
 		progress += increment
 		progress = float("%.3f" % progress)
@@ -436,12 +437,14 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		current_outdegree = degree_dict[current_compound][2]
 		
 		current_median = float(index[1])
-		current_lower_conf = float(index[2])
-		current_upper_conf = float(index[3])
+		current_lower_iqr = float(index[2])
+		current_upper_iqr = float(index[3])
+		current_lower_conf = float(index[4])
+		current_upper_conf = float(index[5])
 		current_score = float(score_dict[current_compound][1])
 
 		# Screen out metabolites with no importance or any due to simulation
-		if current_median == 0.0 and current_lower_conf == 0.0 and current_upper_conf == 0.0 and current_score == 0.0: continue
+		#if current_median == 0.0 and current_lower_conf == 0.0 and current_upper_conf == 0.0 and current_score == 0.0: continue
 		
 		current_relation = 'none'
 		current_conf = 'n.s.'
@@ -456,7 +459,7 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 			if current_score < current_lower_conf:
 				current_conf = '*'
 
-		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_lower_conf, current_upper_conf, current_relation, current_conf])	
+		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_lower_iqr, current_upper_iqr, current_lower_conf, current_upper_conf, current_relation, current_conf])	
 
 	return labeled_confidence
 
@@ -561,7 +564,7 @@ if iterations > 1:
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to a file...\n'
 	outname = file_name + '.monte_carlo.score.txt'
-	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tLower_95_interval\tUpper_95_interval\tRelationshiop\tConfidence\n', final_data, outname)
+	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_IQR_25\tSim_IQR_75\tSim_Lower_95_interval\tSim_Upper_95_interval\tRelationshiop\tConfidence\n', final_data, outname)
 
 
 # If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
