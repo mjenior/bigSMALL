@@ -405,11 +405,11 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 		current_median = float("%.3f" % (numpy.median(distribution_dict[compound])))
 
 		# McGill et al. (1978)
-		upper_iqr, lower_iqr = numpy.percentile(distribution_dict[compound], [75, 25])
+		upper_iqr, lower_iqr, lower_cutoff, upper_cutoff = numpy.percentile(distribution_dict[compound], [75, 25, 5, 95])
 		lower_95 = current_median - abs(1.58 * (lower_iqr / math.sqrt(len(distribution_dict[compound]))))
 		upper_95 = current_median + abs(1.58 * (upper_iqr / math.sqrt(len(distribution_dict[compound]))))
 
-		interval_lst.append([compound, current_median, lower_iqr, upper_iqr, lower_95, upper_95])
+		interval_lst.append([compound, current_median, lower_iqr, upper_iqr, lower_95, upper_95, lower_cutoff, upper_cutoff])
 
 		progress += increment
 		progress = float("%.3f" % progress)
@@ -441,6 +441,8 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		current_upper_iqr = float(index[3])
 		current_lower_conf = float(index[4])
 		current_upper_conf = float(index[5])
+		current_lower_cutoff = float(index[6])
+		current_upper_cutoff = float(index[7])
 		current_score = float(score_dict[current_compound][1])
 
 		# Screen out metabolites with no importance or any due to simulation
@@ -451,12 +453,12 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 
 		if current_score > current_median:
 			current_relation = 'above'
-			if current_score > current_upper_conf:
+			if current_score > current_upper_cutoff:
 				current_conf = '*'
 		
 		elif current_score < current_median:
 			current_relation = 'below'
-			if current_score < current_lower_conf:
+			if current_score < current_lower_cutoff:
 				current_conf = '*'
 
 		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_lower_iqr, current_upper_iqr, current_lower_conf, current_upper_conf, current_relation, current_conf])	
