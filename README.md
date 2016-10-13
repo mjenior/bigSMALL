@@ -79,4 +79,19 @@ ko_expression.tsv - list of KO codes and corresponding expression values for Clo
  
 ko_expression.bipartite.files - Output of bipartite_graph.py for Clostridium difficile 630 during a mouse infection
 
+---------------------------------------------------------------------------
+
+# Citations
+
+Nielsen paper
+
+KEGG
+
+IQR for medians
+
+
+
+
+
+
 

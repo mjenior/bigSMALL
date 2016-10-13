@@ -33,7 +33,7 @@ based on the expression of surrounding enzyme nodes.
 	# List of unique compound nodes
 	# List of unique enzymes nodes
 	# A table containing importance values, node topology, and relationship to simulated medians
-	# A matrix of values generated during iterative Monte Carlo simulation
+	# A matrix of scores generated during iterative Monte Carlo simulation
 
 #---------------------------------------------------------------------------------------#		
 
@@ -356,9 +356,9 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations, compound_name_dict, seq_total, seq_max, compound_lst, transcript_distribution_lst):
 	
 	# Create file to record simulated distributions
-	simulation_file = open('simulated_abundances.txt', 'w') 
+	simulation_file = open('monte_carlo.score_range.tsv', 'w') 
 
-	simulation_str = 'iteration\t' + '\t'.join(kos) + '\n'
+	simulation_str = 'compound\titer_' + '\titer_'.join([str(x) for x in range(1,iterations + 1)]) + '\n'
 	simulation_file.write(simulation_str)
 
 	gene_count = len(kos)
@@ -389,18 +389,19 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 		# Make dictionaries of scores for each compound for each direction
 		for compound in compound_lst:
 			distribution_dict[compound].append(score_dict[compound][1])
-		
-		simulation_str = 'iter_' + str(current) + '\t' + '\t'.join([str(x) for x in sim_transcriptome]) + '\n'
-		simulation_file.write(simulation_str)
 
 		progress += increment
 		progress = float("%.3f" % progress)
 		sys.stdout.write('\rProgress: ' + str(progress) + '%')
 		sys.stdout.flush()
-			
+	
 	# Compile the scores for each compound and find the median and standard deviation
 	interval_lst = []
 	for compound in compound_lst:
+
+		# Write simulated score range to file
+		simulation_str = str(compound ) + '\t' + '\t'.join([str(x) for x in distribution_dict[compound]]) + '\n'
+		simulation_file.write(simulation_str)
 
 		current_median = float("%.3f" % (numpy.median(distribution_dict[compound])))
 
@@ -412,11 +413,14 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 		interval_lst.append([compound, current_median, lower_iqr, upper_iqr, lower_95, upper_95, lower_cutoff, upper_cutoff])
 
 		progress += increment
-		progress = float("%.3f" % progress)
+		if progress > 100:
+			progress = 100
+		else:
+			progress = float("%.3f" % progress)
 		sys.stdout.write('\rProgress: ' + str(progress) + '%')
 		sys.stdout.flush()
 	
-	sys.stdout.write('\rProgress: 100%               ')
+	sys.stdout.write('\rProgress: 100%        ')
 	sys.stdout.flush()
 	print('\n')
 	
@@ -525,7 +529,7 @@ write_list_short('none', compound_lst, 'compound.lst')
 write_list_short('none', KO_lst, 'enzyme.lst')
 
 # Write network to a two column matrix for use in Neo4j or R
-write_list('none', reaction_graph, 'bipartite_graph.txt')
+write_list('none', reaction_graph, 'bipartite_graph.tsv')
 
 #---------------------------------------------------------------------------------------#		
 
@@ -565,22 +569,22 @@ if iterations > 1:
 	
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to a file...\n'
-	outname = file_name + '.monte_carlo.score.txt'
+	outname = file_name + '.importance_score.tsv'
 	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_IQR_25\tSim_IQR_75\tSim_Lower_95_interval\tSim_Upper_95_interval\tSignificance\n', final_data, outname)
 
 
 # If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
 else:
 	print 'Writing score data to a file...\n' 
-	outname = file_name + '.score.txt'
+	outname = file_name + '.importance_score.tsv'
 	write_dictionary_short('Compound_code\tCompound_name\tMetabolite_score\n', score_dict, outname)
 	print 'Done.\n'
 
 print 'Writing network topology and original transcipt counts to files...\n'
-outname = file_name + '.topology.txt'
+outname = file_name + '.topology.tsv'
 write_dictionary('Compound_code\tCompound_name\tIndegree\tOutdegree\n', degree_dict, outname)
 outname = file_name + '.original_mapping.txt'
-outname = file_name + '.mapping.txt'
+outname = file_name + '.mapping.tsv'
 write_dictionary_short('KO_code\tTranscripts\n', transcript_dict, outname)
 print 'Done.\n'
 
