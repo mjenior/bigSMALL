@@ -70,16 +70,16 @@ iterations = int(args.iters)
 
 # Check if the user fucked it up
 if KO_input_file == 'input_file':
-	print 'No KO+expression file provided. Aborting.'
+	print('No KO+expression file provided. Aborting.')
 	sys.exit()
 elif os.stat(KO_input_file).st_size == 0:
 	print('Empty input file provided. Aborting.')
 	sys.exit()
 elif iterations < 1:
-	print 'Invalid iteration value. Aborting.'
+	print('Invalid iteration value. Aborting.')
 	sys.exit()
 elif file_name == '':
-	print 'You used the --name argument and then provided nothing. Not aborting.'
+	print('You used the --name argument and then provided nothing. Not aborting.')
 	file_name = 'you_forgot_to_name_your_flipping_files'
 	
 #---------------------------------------------------------------------------------------#			
@@ -449,19 +449,19 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		#if current_median == 0.0 and current_lower_conf == 0.0 and current_upper_conf == 0.0 and current_score == 0.0: continue
 		
 		current_relation = 'none'
-		current_conf = 'n.s.'
+		current_sig = 'n.s.'
 
 		if current_score > current_median:
 			current_relation = 'above'
 			if current_score > current_upper_cutoff:
-				current_conf = '*'
+				current_sig = '*'
 		
 		elif current_score < current_median:
 			current_relation = 'below'
 			if current_score < current_lower_cutoff:
-				current_conf = '*'
+				current_sig = '*'
 
-		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_lower_iqr, current_upper_iqr, current_lower_conf, current_upper_conf, current_relation, current_conf])	
+		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_lower_iqr, current_upper_iqr, current_lower_conf, current_upper_conf, current_sig])	
 
 	return labeled_confidence
 
@@ -566,7 +566,7 @@ if iterations > 1:
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to a file...\n'
 	outname = file_name + '.monte_carlo.score.txt'
-	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_IQR_25\tSim_IQR_75\tSim_Lower_95_interval\tSim_Upper_95_interval\tRelationshiop\tConfidence\n', final_data, outname)
+	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_IQR_25\tSim_IQR_75\tSim_Lower_95_interval\tSim_Upper_95_interval\tSignificance\n', final_data, outname)
 
 
 # If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
