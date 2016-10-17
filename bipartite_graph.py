@@ -75,12 +75,15 @@ if KO_input_file == 'input_file':
 elif os.stat(KO_input_file).st_size == 0:
 	print('Empty input file provided. Aborting.')
 	sys.exit()
-elif iterations < 1:
+elif iterations < 1 or iterations != 'y':
 	print('Invalid iteration value. Aborting.')
 	sys.exit()
 elif file_name == '':
-	print('You used the --name argument and then provided nothing. Not aborting.')
-	file_name = 'you_forgot_to_name_your_flipping_files'
+	print('Invalid names argument provided. Aborting.')
+	sys.exit()
+
+# Make sure no spaces are in the name argument
+file_name = file_name.replace(' ', '_')
 	
 #---------------------------------------------------------------------------------------#			
 
@@ -362,7 +365,8 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 	simulation_file.write(simulation_str)
 
 	gene_count = len(kos)
-	#probability = gene_count / seq_total
+
+	if iterations == 'y': iterations = gene_count * 10
 	
 	distribution_dict = {}
 	for compound in compound_lst:
@@ -374,9 +378,7 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 	sys.stdout.flush()
 	
 	for current in range(0, iterations):
-			
-		#sim_transcriptome = list(numpy.random.negative_binomial(1, probability, gene_count)) # create new random distribution
-		#sim_transcriptome = random.sample(sim_transcriptome, gene_count) # shuffle the abundances
+
 		sim_transcriptome = random.sample(transcript_distribution_lst, gene_count) # shuffle the abundances
 
 		sim_transcript_dict = {}
