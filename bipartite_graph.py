@@ -407,10 +407,10 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 
 		# McGill et al. (1978)
 		upper_iqr, lower_iqr, lower_cutoff, upper_cutoff = numpy.percentile(distribution_dict[compound], [75, 25, 5, 95])
-		lower_95 = current_median - abs(1.58 * (lower_iqr / math.sqrt(len(distribution_dict[compound]))))
-		upper_95 = current_median + abs(1.58 * (upper_iqr / math.sqrt(len(distribution_dict[compound]))))
+		lower_99 = current_median - abs(1.7 * (lower_iqr / math.sqrt(len(distribution_dict[compound]))))
+		upper_99 = current_median + abs(1.7 * (upper_iqr / math.sqrt(len(distribution_dict[compound]))))
 
-		interval_lst.append([compound, current_median, lower_iqr, upper_iqr, lower_95, upper_95, lower_cutoff, upper_cutoff])
+		interval_lst.append([compound, current_median, lower_iqr, upper_iqr, lower_99, upper_99, lower_cutoff, upper_cutoff])
 
 		progress += increment
 		if progress > 100:
@@ -420,7 +420,7 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 		sys.stdout.write('\rProgress: ' + str(progress) + '%')
 		sys.stdout.flush()
 	
-	sys.stdout.write('\rProgress: 100%        ')
+	sys.stdout.write('\rProgress: 100.0%        ')
 	sys.stdout.flush()
 	print('\n')
 	
@@ -443,8 +443,8 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		current_median = float(index[1])
 		current_lower_iqr = float(index[2])
 		current_upper_iqr = float(index[3])
-		current_lower_conf = float(index[4])
-		current_upper_conf = float(index[5])
+		current_lower_99conf = float(index[4])
+		current_upper_99conf = float(index[5])
 		current_lower_cutoff = float(index[6])
 		current_upper_cutoff = float(index[7])
 		current_score = float(score_dict[current_compound][1])
@@ -465,7 +465,7 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 			if current_score < current_lower_cutoff:
 				current_sig = '*'
 
-		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_lower_iqr, current_upper_iqr, current_lower_conf, current_upper_conf, current_sig])	
+		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_lower_iqr, current_upper_iqr, current_lower_99conf, current_upper_99conf, current_sig])	
 
 	return labeled_confidence
 
@@ -570,7 +570,7 @@ if iterations > 1:
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to a file...\n'
 	outname = file_name + '.importance_score.tsv'
-	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_IQR_25\tSim_IQR_75\tSim_Lower_95_interval\tSim_Upper_95_interval\tSignificance\n', final_data, outname)
+	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_IQR_25\tSim_IQR_75\tSim_Lower_99_interval\tSim_Upper_99_interval\tSignificance\n', final_data, outname)
 
 
 # If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
