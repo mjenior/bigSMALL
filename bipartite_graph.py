@@ -75,7 +75,7 @@ if KO_input_file == 'input_file':
 elif os.stat(KO_input_file).st_size == 0:
 	print('Empty input file provided. Aborting.')
 	sys.exit()
-elif iterations < 1 or iterations != 'y':
+elif iterations < 1 and iterations != 'y':
 	print('Invalid iteration value. Aborting.')
 	sys.exit()
 elif file_name == '':
@@ -467,7 +467,7 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 			if current_score < current_lower_cutoff:
 				current_sig = '*'
 
-		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_lower_iqr, current_upper_iqr, current_lower_99conf, current_upper_99conf, current_sig])	
+		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_lower_99conf, current_upper_99conf, current_sig])	
 
 	return labeled_confidence
 
@@ -572,7 +572,7 @@ if iterations > 1:
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to a file...\n'
 	outname = file_name + '.importance_score.tsv'
-	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_IQR_25\tSim_IQR_75\tSim_Lower_99_interval\tSim_Upper_99_interval\tSignificance\n', final_data, outname)
+	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_Lower_99_interval\tSim_Upper_99_interval\tSignificance\n', final_data, outname)
 
 
 # If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
