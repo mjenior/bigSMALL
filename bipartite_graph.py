@@ -572,7 +572,7 @@ if iterations > 1:
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to a file...\n'
 	outname = file_name + '.importance_score.tsv'
-	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_Lower_99_interval\tSim_Upper_99_interval\tSignificance\n', final_data, outname)
+	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_Lower_99_Confidence\tSim_Upper_99_Confidence\tSignificance\n', final_data, outname)
 
 
 # If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
