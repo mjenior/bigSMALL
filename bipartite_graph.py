@@ -409,8 +409,8 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 
 		# McGill et al. (1978)
 		upper_iqr, lower_iqr, lower_cutoff, upper_cutoff = numpy.percentile(distribution_dict[compound], [75, 25, 5, 95])
-		lower_99 = current_median - abs(1.7 * (lower_iqr / math.sqrt(len(distribution_dict[compound]))))
-		upper_99 = current_median + abs(1.7 * (upper_iqr / math.sqrt(len(distribution_dict[compound]))))
+		lower_99 = current_median - abs(1.96 * (lower_iqr / math.sqrt(len(distribution_dict[compound]))))
+		upper_99 = current_median + abs(1.96 * (upper_iqr / math.sqrt(len(distribution_dict[compound]))))
 
 		interval_lst.append([compound, current_median, lower_iqr, upper_iqr, lower_99, upper_99, lower_cutoff, upper_cutoff])
 
