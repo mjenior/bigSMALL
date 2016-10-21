@@ -405,14 +405,18 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 		simulation_str = str(compound ) + '\t' + '\t'.join([str(x) for x in distribution_dict[compound]]) + '\n'
 		simulation_file.write(simulation_str)
 
-		current_median = float("%.3f" % (numpy.median(distribution_dict[compound])))
+		# Get the distribution
+		unique_dist = list(set(distribution_dict[compound]))
+
+		# Calculate median
+		current_median = float("%.3f" % (numpy.median(unique_dist)))
 
 		# McGill et al. (1978)
-		upper_iqr, lower_iqr, lower_cutoff, upper_cutoff = numpy.percentile(distribution_dict[compound], [75, 25, 5, 95])
-		lower_99 = current_median - abs(1.96 * (lower_iqr / math.sqrt(len(distribution_dict[compound]))))
-		upper_99 = current_median + abs(1.96 * (upper_iqr / math.sqrt(len(distribution_dict[compound]))))
+		upper_iqr, lower_iqr, lower_cutoff, upper_cutoff = numpy.percentile(unique_dist, [75, 25, 5, 95])
+		lower_95 = current_median - abs(1.7 * (lower_iqr / math.sqrt(len(unique_dist))))
+		upper_95 = current_median + abs(1.7 * (upper_iqr / math.sqrt(len(unique_dist))))
 
-		interval_lst.append([compound, current_median, lower_iqr, upper_iqr, lower_99, upper_99, lower_cutoff, upper_cutoff])
+		interval_lst.append([compound, current_median, lower_iqr, upper_iqr, lower_95, upper_95, lower_cutoff, upper_cutoff])
 
 		progress += increment
 		if progress > 100:
@@ -445,14 +449,11 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		current_median = float(index[1])
 		current_lower_iqr = float(index[2])
 		current_upper_iqr = float(index[3])
-		current_lower_99conf = float(index[4])
-		current_upper_99conf = float(index[5])
+		current_lower_95conf = float(index[4])
+		current_upper_95conf = float(index[5])
 		current_lower_cutoff = float(index[6])
 		current_upper_cutoff = float(index[7])
 		current_score = float(score_dict[current_compound][1])
-
-		# Screen out metabolites with no importance or any due to simulation
-		#if current_median == 0.0 and current_lower_conf == 0.0 and current_upper_conf == 0.0 and current_score == 0.0: continue
 		
 		current_relation = 'none'
 		current_sig = 'n.s.'
@@ -467,7 +468,7 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 			if current_score < current_lower_cutoff:
 				current_sig = '*'
 
-		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_lower_99conf, current_upper_99conf, current_sig])	
+		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_lower_95conf, current_upper_95conf, current_sig])	
 
 	return labeled_confidence
 
@@ -572,7 +573,7 @@ if iterations > 1:
 	# Write all the calculated data to files
 	print 'Writing score data with Monte Carlo simulation to a file...\n'
 	outname = file_name + '.importance_score.tsv'
-	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_Lower_99_Confidence\tSim_Upper_99_Confidence\tSignificance\n', final_data, outname)
+	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_Lower_95_Confidence\tSim_Upper_95_Confidence\tSignificance\n', final_data, outname)
 
 
 # If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
