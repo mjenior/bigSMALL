@@ -58,13 +58,13 @@ start = time.time()
 parser = argparse.ArgumentParser(description='Generate bipartite metabolic models and calculates importance of substrate nodes based on gene expression.')
 parser.add_argument('input_file')
 parser.add_argument('--name', default='organism', help='Organism or other name for KO+expression file (default is organism)')
-parser.add_argument('--iters', default=1, help='iterations for random distribution subsampling')
+parser.add_argument('--iters', default='n', help='Generate probability distribution for comparison')
 args = parser.parse_args()
 
 # Assign variables
 KO_input_file = str(args.input_file)
 file_name = str(args.name)
-iterations = int(args.iters)
+iterations = str(args.iters)
 
 #---------------------------------------------------------------------------------------#			
 
@@ -75,11 +75,11 @@ if KO_input_file == 'input_file':
 elif os.stat(KO_input_file).st_size == 0:
 	print('Empty input file provided. Aborting.')
 	sys.exit()
-elif iterations < 1 and iterations != 'y':
-	print('Invalid iteration value. Aborting.')
-	sys.exit()
 elif file_name == '':
 	print('Invalid names argument provided. Aborting.')
+	sys.exit()
+elif iterations != 'y' and iterations != 'n':
+	print('Invalid iterations argument. Aborting.')
 	sys.exit()
 
 # Make sure no spaces are in the name argument
@@ -163,7 +163,6 @@ def transcription_dictionary(KO_file):
 	seq_total = 0  # Total number of reads
 	seq_max = 0  # Highest single number of reads
 	transcript_dict = {}  # Dictionary for transcription
-	transcript_distribution_lst = []
 	
 	for line in KO_file:
 		entry = line.split()
@@ -175,14 +174,12 @@ def transcription_dictionary(KO_file):
 		
 		if not ko in transcript_dict.keys():
 			transcript_dict[ko] = expression
-			transcript_distribution_lst.append(expression)
 		else:
 			transcript_dict[ko] = transcript_dict[ko] + expression
-			transcript_distribution_lst.append(transcript_dict[ko])
 		
 		if transcript_dict[ko] > seq_max: seq_max = transcript_dict[ko]
 	
-	return transcript_dict, seq_total, seq_max, transcript_distribution_lst
+	return transcript_dict, seq_total, seq_max
 
 
 # Translates a list of KOs to the bipartite graph
@@ -197,6 +194,7 @@ def network_dictionaries(KOs, ko_dict, reaction_dict):
 	
 	network_list = []
 	compound_lst = []
+	KO_lst = []
 	
 	ko_input_dict = {}
 	ko_output_dict = {}
@@ -205,9 +203,8 @@ def network_dictionaries(KOs, ko_dict, reaction_dict):
 	# Outside loop finds the biochemical reactions corresponding the the given KO	
 	print('Translating KEGG orthologs to bipartite enzyme-to-compound graph...\n')
 	
-	
 	with open('key_error.log', 'w') as errorfile:
-	
+
 		for current_ko in KOs:
 	
 			triedCountKO += 1
@@ -236,6 +233,7 @@ def network_dictionaries(KOs, ko_dict, reaction_dict):
 					continue
 		
 				# The innermost loop creates two columns of input and output compounds, incorporating reversibility information
+				KO_lst.append(current_ko)
 				for x in reaction_collection:
 				
 					totalIncludedReact += 1
@@ -276,11 +274,12 @@ Reactions unsuccessfully translated to Compounds: {Reaction_failed}
 	
 	network_list = [list(x) for x in set(tuple(x) for x in network_list)]  # List of unique edges (KOs and compounds)
 	compound_lst = list(set(compound_lst))
+	KO_lst = list(set(KO_lst))
 	
 	errorfile.close()
 	print('Done.\n')
 	
-	return network_list, ko_input_dict, ko_output_dict, compound_lst
+	return network_list, ko_input_dict, ko_output_dict, compound_lst, KO_lst
 
 
 # Compile surrounding input and output node transcripts into a dictionary, same for degree information
@@ -355,34 +354,41 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 	return score_dict, degree_dict
 
 	
-# Perform iterative Monte Carlo simulation to create confidence interval for compound importance values
-def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations, compound_name_dict, seq_total, seq_max, compound_lst, transcript_distribution_lst):
+# Perform iterative simulation to create confidence interval for compound importance values
+def probability_interval(ko_input_dict, ko_output_dict, degree_dict, kos, compound_name_dict, seq_total, seq_max, compound_lst, transcription_dict):
 	
+	gene_count = len(kos)
+
+	# Screen transcript distribution for those KOs included in the metabolic network
+	transcript_distribution = []
+	for index in kos:
+		transcript_distribution.append(int(transcription_dict[index]))
+
 	# Create file to record simulated distributions
 	simulation_file = open('monte_carlo.score_range.tsv', 'w') 
 
-	simulation_str = 'compound\titer_' + '\titer_'.join([str(x) for x in range(1,iterations + 1)]) + '\n'
+	simulation_str = 'compound\titer_' + '\titer_'.join([str(x) for x in range(1,gene_count + 1)]) + '\n'
 	simulation_file.write(simulation_str)
-
-	gene_count = len(kos)
 	
 	distribution_dict = {}
 	for compound in compound_lst:
 		distribution_dict[compound] = []
 	
-	increment = 100.0 / float(iterations + len(compound_lst))
+	increment = 100.0 / float(gene_count + len(compound_lst))
 	progress = 0.0
 	sys.stdout.write('\rProgress: ' + str(progress) + '%')
 	sys.stdout.flush()
 	
-	for current in range(0, iterations):
-
-		sim_transcriptome = random.sample(transcript_distribution_lst, gene_count) # shuffle the abundances
+	for current in range(0, gene_count):
 
 		sim_transcript_dict = {}
 		for index in range(0, gene_count):
-			sim_transcript_dict[kos[index]] = sim_transcriptome[index]
+
+			sim_transcript_dict[kos[index]] = transcript_distribution[index]
 		
+ 		# Rearrange by 1 every iteration
+ 		transcript_distribution += [transcript_distribution.pop(0)]
+
 		substrate_dict, degree_dict = compile_scores(sim_transcript_dict, ko_input_dict, ko_output_dict, compound_lst, kos)
 		score_dict, degree_dict = calculate_score(substrate_dict, degree_dict, compound_name_dict, compound_lst)
 		
@@ -410,7 +416,7 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 		current_median = float("%.3f" % (numpy.median(unique_dist)))
 
 		# McGill et al. (1978)
-		upper_iqr, lower_iqr, lower_cutoff, upper_cutoff = numpy.percentile(unique_dist, [75, 25, 5, 95])
+		upper_iqr, lower_iqr, lower_cutoff, upper_cutoff = numpy.percentile(unique_dist, [75, 25, 2.5, 97.5])
 		lower_95 = current_median - abs(1.7 * (lower_iqr / math.sqrt(len(unique_dist))))
 		upper_95 = current_median + abs(1.7 * (upper_iqr / math.sqrt(len(unique_dist))))
 
@@ -484,8 +490,8 @@ if file_name != 'organism':
 
 # Read in and create dictionary for expression
 with open(KO_input_file, 'r') as KO_file:
-	transcript_dict, total, seq_max, transcript_distribution_lst = transcription_dictionary(KO_file)
-KO_lst = transcript_dict.keys()
+	transcript_dict, total, seq_max = transcription_dictionary(KO_file)
+all_KO_lst = transcript_dict.keys()
 
 #---------------------------------------------------------------------------------------#		
 
@@ -521,7 +527,7 @@ print('Done.\n')
 #---------------------------------------------------------------------------------------#	
 
 # Call translate function and separate output lists
-reaction_graph, ko_input_dict, ko_output_dict, compound_lst = network_dictionaries(KO_lst, ko_dictionary, reaction_dictionary)
+reaction_graph, ko_input_dict, ko_output_dict, compound_lst, KO_lst = network_dictionaries(all_KO_lst, ko_dictionary, reaction_dictionary)
 
 #---------------------------------------------------------------------------------------#	
 
@@ -535,10 +541,10 @@ write_list('none', reaction_graph, 'bipartite_graph.tsv')
 #---------------------------------------------------------------------------------------#		
 
 # Define calculation selection with a string
-if iterations == 1:
-	iter_str = 'none'
+if iterations == 'y':
+	iter_str = 'yes'
 else:
-	iter_str = str(iterations)
+	iter_str = 'no'
 
 # Write parameters to a file
 with open('parameters.txt', 'w') as parameter_file:
@@ -547,7 +553,7 @@ KO expression file: {ko}
 Graph name: {name}
 KEGG ortholog nodes: {kos}
 Substrate nodes: {substrate}
-Monte Carlo simulation iterations: {iter}
+Probability distribution generated: {iter}
 '''.format(ko=str(KO_input_file), name=str(file_name), iter=iter_str, kos=str(len(KO_lst)), substrate=str(len(compound_lst)))
 	parameter_file.write(outputString)
 
@@ -562,9 +568,9 @@ print 'Done.\n'
 #---------------------------------------------------------------------------------------#		
 
 # Calculate simulated importance values if specified
-if iterations > 1:
+if iterations == 'y':
 	print 'Comparing to simulated transcript distribution...\n'	
-	interval_lst = monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, KO_lst, iterations, compound_name_dictionary, total, seq_max, compound_lst, transcript_distribution_lst)
+	interval_lst = probability_interval(ko_input_dict, ko_output_dict, degree_dict, KO_lst, compound_name_dictionary, total, seq_max, compound_lst, transcript_dict)
 	final_data = confidence_interval(score_dict, interval_lst, degree_dict)
 	print 'Done.\n'
 	
@@ -574,7 +580,7 @@ if iterations > 1:
 	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_Lower_95_Confidence\tSim_Upper_95_Confidence\tSignificance\n', final_data, outname)
 
 
-# If Monte Carlo simulation not performed, write only scores calculated from measured expression to files	
+# If simulation not performed, write only scores calculated from measured expression to files	
 else:
 	print 'Writing score data to a file...\n' 
 	outname = file_name + '.importance_score.tsv'
@@ -598,7 +604,7 @@ os.chdir(starting_directory)
 
 # Report time if iterations are performed
 end = time.time()
-if iterations > 10:
+if end > 10:
 	duration = str(int(end - start))
 	print '\nCompleted in ' + duration + ' seconds.\n'
 else :
