@@ -43,7 +43,7 @@ import os
 import pickle
 import math
 import argparse
-import random
+import itertools
 import numpy
 import time
 
@@ -355,7 +355,7 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 
 	
 # Perform iterative simulation to create confidence interval for compound importance values
-def probability_interval(ko_input_dict, ko_output_dict, degree_dict, kos, compound_name_dict, seq_total, seq_max, compound_lst, transcription_dict):
+def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, compound_name_dict, seq_total, seq_max, compound_lst, transcription_dict):
 	
 	gene_count = len(kos)
 
@@ -364,30 +364,29 @@ def probability_interval(ko_input_dict, ko_output_dict, degree_dict, kos, compou
 	for index in kos:
 		transcript_distribution.append(int(transcription_dict[index]))
 
+	print 'Permuting all possible transcript distributions...\n'
+	all_distributions = list(itertools.permutations(transcript_distribution))
+	print 'Done.\n'
+
 	# Create file to record simulated distributions
 	simulation_file = open('monte_carlo.score_range.tsv', 'w') 
 
-	simulation_str = 'compound\titer_' + '\titer_'.join([str(x) for x in range(1,gene_count + 1)]) + '\n'
+	simulation_str = 'compound\titer_' + '\titer_'.join([str(x) for x in range(1, len(all_distributions)+1)]) + '\n'
 	simulation_file.write(simulation_str)
 	
 	distribution_dict = {}
 	for compound in compound_lst:
 		distribution_dict[compound] = []
-	
-	increment = 100.0 / float(gene_count + len(compound_lst))
-	progress = 0.0
-	sys.stdout.write('\rProgress: ' + str(progress) + '%')
-	sys.stdout.flush()
-	
-	for current in range(0, gene_count):
+
+	print 'Calculating importance scores for probability distributions...\n'	
+	for current in all_distributions:
+
+		current_distribution = list(current)
 
 		sim_transcript_dict = {}
-		for index in range(0, gene_count):
+		for index in range(0, gene_count+1):
 
-			sim_transcript_dict[kos[index]] = transcript_distribution[index]
-		
- 		# Rearrange by 1 every iteration
- 		transcript_distribution += [transcript_distribution.pop(0)]
+			sim_transcript_dict[kos[index]] = current_distribution[index]
 
 		substrate_dict, degree_dict = compile_scores(sim_transcript_dict, ko_input_dict, ko_output_dict, compound_lst, kos)
 		score_dict, degree_dict = calculate_score(substrate_dict, degree_dict, compound_name_dict, compound_lst)
@@ -395,12 +394,9 @@ def probability_interval(ko_input_dict, ko_output_dict, degree_dict, kos, compou
 		# Make dictionaries of scores for each compound for each direction
 		for compound in compound_lst:
 			distribution_dict[compound].append(score_dict[compound][1])
+	print 'Done.\n'
 
-		progress += increment
-		progress = float("%.3f" % progress)
-		sys.stdout.write('\rProgress: ' + str(progress) + '%')
-		sys.stdout.flush()
-	
+	print 'Calculating summary statistics of each importance score distribution...\n'
 	# Compile the scores for each compound and find the median and standard deviation
 	interval_lst = []
 	for compound in compound_lst:
@@ -416,24 +412,13 @@ def probability_interval(ko_input_dict, ko_output_dict, degree_dict, kos, compou
 		current_median = float("%.3f" % (numpy.median(unique_dist)))
 
 		# McGill et al. (1978)
-		upper_iqr, lower_iqr, lower_cutoff, upper_cutoff = numpy.percentile(unique_dist, [75, 25, 2.5, 97.5])
+		upper_iqr, lower_iqr, lower_cutoff_05, upper_cutoff_05, lower_cutoff_01, upper_cutoff_01 = numpy.percentile(unique_dist, [75, 25, 5, 95, 1, 99])
 		lower_95 = current_median - abs(1.7 * (lower_iqr / math.sqrt(len(unique_dist))))
 		upper_95 = current_median + abs(1.7 * (upper_iqr / math.sqrt(len(unique_dist))))
 
-		interval_lst.append([compound, current_median, lower_iqr, upper_iqr, lower_95, upper_95, lower_cutoff, upper_cutoff])
+		interval_lst.append([compound, current_median, lower_95, upper_95, lower_cutoff_05, upper_cutoff_05, lower_cutoff_01, upper_cutoff_01])
 
-		progress += increment
-		if progress > 100:
-			progress = 100
-		else:
-			progress = float("%.3f" % progress)
-		sys.stdout.write('\rProgress: ' + str(progress) + '%')
-		sys.stdout.flush()
-	
-	sys.stdout.write('\rProgress: 100.0%        ')
-	sys.stdout.flush()
-	print('\n')
-	
+	print 'Done.\n'
 	simulation_file.close()
 	return interval_lst
 
@@ -449,28 +434,32 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		current_name = score_dict[current_compound][0]
 		current_indegree = degree_dict[current_compound][1]
 		current_outdegree = degree_dict[current_compound][2]
-		
-		current_median = float(index[1])
-		current_lower_iqr = float(index[2])
-		current_upper_iqr = float(index[3])
-		current_lower_95conf = float(index[4])
-		current_upper_95conf = float(index[5])
-		current_lower_cutoff = float(index[6])
-		current_upper_cutoff = float(index[7])
 		current_score = float(score_dict[current_compound][1])
 		
-		current_relation = 'none'
-		current_sig = 'n.s.'
-
+		current_median = float(index[1])
+		current_lower_95conf = float(index[2])
+		current_upper_95conf = float(index[3])
+		current_lower_cutoff05 = float(index[4])
+		current_upper_cutoff05 = float(index[5])
+		current_lower_cutoff01 = float(index[6])
+		current_upper_cutoff01 = float(index[7])
+		
 		if current_score > current_median:
-			current_relation = 'above'
-			if current_score > current_upper_cutoff:
-				current_sig = '*'
+			if current_score > current_upper_cutoff05:
+				if current_score > current_upper_cutoff01:
+					current_sig = '<0.01'
+				else:
+					current_sig = '<0.05'
 		
 		elif current_score < current_median:
-			current_relation = 'below'
-			if current_score < current_lower_cutoff:
-				current_sig = '*'
+			if current_score < current_lower_cutoff05:
+				if current_score < current_lower_cutoff05:
+					current_sig = '<0.01'
+				else:
+					current_sig = '<0.05'
+
+		else:
+			current_sig = 'n.s.'
 
 		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_lower_95conf, current_upper_95conf, current_sig])	
 
@@ -569,8 +558,7 @@ print 'Done.\n'
 
 # Calculate simulated importance values if specified
 if iterations == 'y':
-	print 'Comparing to simulated transcript distribution...\n'	
-	interval_lst = probability_interval(ko_input_dict, ko_output_dict, degree_dict, KO_lst, compound_name_dictionary, total, seq_max, compound_lst, transcript_dict)
+	interval_lst = probability_distribution(ko_input_dict, ko_output_dict, degree_dict, KO_lst, compound_name_dictionary, total, seq_max, compound_lst, transcript_dict)
 	final_data = confidence_interval(score_dict, interval_lst, degree_dict)
 	print 'Done.\n'
 	
