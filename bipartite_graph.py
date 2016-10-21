@@ -365,8 +365,6 @@ def monte_carlo_sim(ko_input_dict, ko_output_dict, degree_dict, kos, iterations,
 	simulation_file.write(simulation_str)
 
 	gene_count = len(kos)
-
-	if iterations == 'y': iterations = gene_count * 10
 	
 	distribution_dict = {}
 	for compound in compound_lst:
