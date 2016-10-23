@@ -358,21 +358,17 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, compound_name_dict, seq_total, seq_max, compound_lst, transcription_dict):
 	
 	gene_count = len(kos)
+	permutations = 0
 
 	# Screen transcript distribution for those KOs included in the metabolic network
 	transcript_distribution = []
 	for index in kos:
 		transcript_distribution.append(int(transcription_dict[index]))
 
-	print 'Permuting all possible transcript distributions...\n'
+	# MEMORY INTENSIVE (~40 gb RAM)
+	print 'Permuting all possible transcript distributions...\n'	
 	all_distributions = list(itertools.permutations(transcript_distribution))
 	print 'Done.\n'
-
-	# Create file to record simulated distributions
-	simulation_file = open('monte_carlo.score_range.tsv', 'w') 
-
-	simulation_str = 'compound\titer_' + '\titer_'.join([str(x) for x in range(1, len(all_distributions)+1)]) + '\n'
-	simulation_file.write(simulation_str)
 	
 	distribution_dict = {}
 	for compound in compound_lst:
@@ -380,6 +376,8 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 
 	print 'Calculating importance scores for probability distributions...\n'	
 	for current in all_distributions:
+
+		permutations += 1
 
 		current_distribution = list(current)
 
@@ -401,10 +399,6 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	interval_lst = []
 	for compound in compound_lst:
 
-		# Write simulated score range to file
-		simulation_str = str(compound ) + '\t' + '\t'.join([str(x) for x in distribution_dict[compound]]) + '\n'
-		simulation_file.write(simulation_str)
-
 		# Get the distribution
 		unique_dist = list(set(distribution_dict[compound]))
 
@@ -419,8 +413,7 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		interval_lst.append([compound, current_median, lower_95, upper_95, lower_cutoff_05, upper_cutoff_05, lower_cutoff_01, upper_cutoff_01])
 
 	print 'Done.\n'
-	simulation_file.close()
-	return interval_lst
+	return interval_lst, permutations
 
 
 # Compare randomized confidence intervals and format final data structures
@@ -527,25 +520,6 @@ write_list_short('none', KO_lst, 'enzyme.lst')
 # Write network to a two column matrix for use in Neo4j or R
 write_list('none', reaction_graph, 'bipartite_graph.tsv')
 
-#---------------------------------------------------------------------------------------#		
-
-# Define calculation selection with a string
-if iterations == 'y':
-	iter_str = 'yes'
-else:
-	iter_str = 'no'
-
-# Write parameters to a file
-with open('parameters.txt', 'w') as parameter_file:
-	outputString = '''User Defined Parameters
-KO expression file: {ko}
-Graph name: {name}
-KEGG ortholog nodes: {kos}
-Substrate nodes: {substrate}
-Probability distribution generated: {iter}
-'''.format(ko=str(KO_input_file), name=str(file_name), iter=iter_str, kos=str(len(KO_lst)), substrate=str(len(compound_lst)))
-	parameter_file.write(outputString)
-
 #---------------------------------------------------------------------------------------#	
 
 # Calculate actual importance scores for each compound in the network
@@ -558,7 +532,7 @@ print 'Done.\n'
 
 # Calculate simulated importance values if specified
 if iterations == 'y':
-	interval_lst = probability_distribution(ko_input_dict, ko_output_dict, degree_dict, KO_lst, compound_name_dictionary, total, seq_max, compound_lst, transcript_dict)
+	interval_lst, permutations = probability_distribution(ko_input_dict, ko_output_dict, degree_dict, KO_lst, compound_name_dictionary, total, seq_max, compound_lst, transcript_dict)
 	final_data = confidence_interval(score_dict, interval_lst, degree_dict)
 	print 'Done.\n'
 	
@@ -599,6 +573,35 @@ else :
 	print '\n'
 	
 print 'Output files located in: ' + directory + '\n\n'
+
+#---------------------------------------------------------------------------------------#		
+
+# Define calculation selection with a string
+if iterations == 'y':
+	iter_str = 'yes'
+else:
+	iter_str = 'no'
+
+time_unit = 'seconds'
+if int(duration) >= 120:
+	duration = int(duration) / 60
+	time_unit = 'minutes'
+if int(duration) >= 120:
+	duration = int(duration) / 60
+	time_unit = 'hours'
+
+# Write parameters to a file
+with open('parameters.txt', 'w') as parameter_file:
+	outputString = '''User Defined Parameters
+KO expression file: {ko}
+Graph name: {name}
+KEGG ortholog nodes: {kos}
+Substrate nodes: {substrate}
+Probability distribution generated: {iter}
+Permutations: {perms}
+Duration: {time} {tunit}
+'''.format(ko=str(KO_input_file), name=str(file_name), iter=iter_str, kos=str(len(KO_lst)), substrate=str(len(compound_lst)), perms=str(permutations), time=str(duration, tunit=time_unit)
+	parameter_file.write(outputString)
 
 # Enjoy the data, ya filthy animal!
 
