@@ -365,7 +365,9 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	for index in kos:
 		transcript_distribution.append(int(transcription_dict[index]))
 
-	# MEMORY INTENSIVE (~40 gb RAM)
+	# MEMORY INTENSIVE - NEVER GOING TO WORK
+
+	# need to switch to another approach
 	print 'Permuting all possible transcript distributions...\n'	
 	all_distributions = list(itertools.permutations(transcript_distribution))
 	print 'Done.\n'
