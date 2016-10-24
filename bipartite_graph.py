@@ -539,7 +539,7 @@ print 'Done.\n'
 #---------------------------------------------------------------------------------------#		
 
 # Calculate simulated importance values if specified
-if iterations == 'y':
+if iterations > 1:
 	interval_lst = probability_distribution(ko_input_dict, ko_output_dict, degree_dict, KO_lst, compound_name_dictionary, total, seq_max, compound_lst, transcript_dict, iterations)
 	final_data = confidence_interval(score_dict, interval_lst, degree_dict)
 	print 'Done.\n'
