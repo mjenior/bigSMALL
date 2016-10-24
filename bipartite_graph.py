@@ -43,7 +43,7 @@ import os
 import pickle
 import math
 import argparse
-import itertools
+import random
 import numpy
 import time
 
@@ -58,13 +58,13 @@ start = time.time()
 parser = argparse.ArgumentParser(description='Generate bipartite metabolic models and calculates importance of substrate nodes based on gene expression.')
 parser.add_argument('input_file')
 parser.add_argument('--name', default='organism', help='Organism or other name for KO+expression file (default is organism)')
-parser.add_argument('--iters', default='n', help='Generate probability distribution for comparison')
+parser.add_argument('--iters', default='1000', help='Number of iterations of probability distribution for score comparison')
 args = parser.parse_args()
 
 # Assign variables
 KO_input_file = str(args.input_file)
 file_name = str(args.name)
-iterations = str(args.iters)
+iterations = int(args.iters)
 
 #---------------------------------------------------------------------------------------#			
 
@@ -78,8 +78,8 @@ elif os.stat(KO_input_file).st_size == 0:
 elif file_name == '':
 	print('Invalid names argument provided. Aborting.')
 	sys.exit()
-elif iterations != 'y' and iterations != 'n':
-	print('Invalid iterations argument. Aborting.')
+elif iterations < 1:
+	print('Invalid iterations value. Aborting.')
 	sys.exit()
 
 # Make sure no spaces are in the name argument
@@ -283,7 +283,7 @@ Reactions unsuccessfully translated to Compounds: {Reaction_failed}
 
 
 # Compile surrounding input and output node transcripts into a dictionary, same for degree information
-def compile_scores(transcript_dictionary, ko_input_dict, ko_output_dict, compound_lst, KO_lst):
+def compile_transcripts(transcript_dictionary, ko_input_dict, ko_output_dict, compound_lst, KO_lst):
 
 	compound_transcript_dict = {}
 	compound_degree_dict = {}
@@ -355,21 +355,24 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 
 	
 # Perform iterative simulation to create confidence interval for compound importance values
-def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, compound_name_dict, seq_total, seq_max, compound_lst, transcription_dict):
+def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, compound_name_dict, seq_total, seq_max, compound_lst, transcription_dict, iterations):
 	
-	gene_count = len(kos)
-	permutations = 0
-
 	# Screen transcript distribution for those KOs included in the metabolic network
 	transcript_distribution = []
 	for index in kos:
 		transcript_distribution.append(int(transcription_dict[index]))
 
-	# MEMORY INTENSIVE - NEVER GOING TO WORK
+	print 'Permuting transcript distributions...\n'	
+	all_distributions = set()
+	for index in range(iterations):
+		current_distribution = tuple(random.shuffle(transcript_distribution))
+		if not current_distribution in all_distributions:
+			all_distributions.update(current_distribution)
+			simulation_str = str(compound) + '\t' + '\t'.join([str(x) for x in distribution_dict[compound]]) + '\n'
+			simulation_file.write(simulation_str)
 
-	# need to switch to another approach
-	print 'Permuting all possible transcript distributions...\n'	
-	all_distributions = list(itertools.permutations(transcript_distribution))
+	simulation_file.close()
+	all_distributions = list(all_distributions)
 	print 'Done.\n'
 	
 	distribution_dict = {}
@@ -377,23 +380,26 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		distribution_dict[compound] = []
 
 	print 'Calculating importance scores for probability distributions...\n'	
-	for current in all_distributions:
+	simulation_file = open('random_score_ranges.tsv', 'w')
+	simulation_str = 'metabolite\titer_' + '\titer_'.join([str(x) for x in range(1,iterations) + '\n'
+	simulation_file.write(simulation_str) 
+	for index in all_distributions:
 
-		permutations += 1
-
-		current_distribution = list(current)
+		current_distribution = list(index)
 
 		sim_transcript_dict = {}
-		for index in range(0, gene_count+1):
-
+		for index in range(len(kos)):
 			sim_transcript_dict[kos[index]] = current_distribution[index]
 
-		substrate_dict, degree_dict = compile_scores(sim_transcript_dict, ko_input_dict, ko_output_dict, compound_lst, kos)
+		substrate_dict, degree_dict = compile_transcripts(sim_transcript_dict, ko_input_dict, ko_output_dict, compound_lst, kos)
 		score_dict, degree_dict = calculate_score(substrate_dict, degree_dict, compound_name_dict, compound_lst)
 		
 		# Make dictionaries of scores for each compound for each direction
 		for compound in compound_lst:
 			distribution_dict[compound].append(score_dict[compound][1])
+			simulation_str = str(compound) + '\t' + '\t'.join([str(x) for x in distribution_dict[compound]]) + '\n'
+			simulation_file.write(simulation_str)
+	simulation_file.close()
 	print 'Done.\n'
 
 	print 'Calculating summary statistics of each importance score distribution...\n'
@@ -415,7 +421,7 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		interval_lst.append([compound, current_median, lower_95, upper_95, lower_cutoff_05, upper_cutoff_05, lower_cutoff_01, upper_cutoff_01])
 
 	print 'Done.\n'
-	return interval_lst, permutations
+	return interval_lst
 
 
 # Compare randomized confidence intervals and format final data structures
@@ -526,7 +532,7 @@ write_list('none', reaction_graph, 'bipartite_graph.tsv')
 
 # Calculate actual importance scores for each compound in the network
 print 'Calculating compound node connectedness and metabolite scores...\n'
-compound_transcript_dict, compound_degree_dict = compile_scores(transcript_dict, ko_input_dict, ko_output_dict, compound_lst, KO_lst)
+compound_transcript_dict, compound_degree_dict = compile_transcripts(transcript_dict, ko_input_dict, ko_output_dict, compound_lst, KO_lst)
 score_dict, degree_dict = calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dictionary, compound_lst)
 print 'Done.\n'
 
@@ -534,7 +540,7 @@ print 'Done.\n'
 
 # Calculate simulated importance values if specified
 if iterations == 'y':
-	interval_lst, permutations = probability_distribution(ko_input_dict, ko_output_dict, degree_dict, KO_lst, compound_name_dictionary, total, seq_max, compound_lst, transcript_dict)
+	interval_lst = probability_distribution(ko_input_dict, ko_output_dict, degree_dict, KO_lst, compound_name_dictionary, total, seq_max, compound_lst, transcript_dict, iterations)
 	final_data = confidence_interval(score_dict, interval_lst, degree_dict)
 	print 'Done.\n'
 	
@@ -579,7 +585,7 @@ print 'Output files located in: ' + directory + '\n\n'
 #---------------------------------------------------------------------------------------#		
 
 # Define calculation selection with a string
-if iterations == 'y':
+if iterations > 1:
 	iter_str = 'yes'
 else:
 	iter_str = 'no'
@@ -602,7 +608,7 @@ Substrate nodes: {substrate}
 Probability distribution generated: {iter}
 Permutations: {perms}
 Duration: {time} {tunit}
-'''.format(ko=str(KO_input_file), name=str(file_name), iter=iter_str, kos=str(len(KO_lst)), substrate=str(len(compound_lst)), perms=str(permutations), time=str(duration, tunit=time_unit)
+'''.format(ko=str(KO_input_file), name=str(file_name), iter=iter_str, kos=str(len(KO_lst)), substrate=str(len(compound_lst)), perms=str(iterations), time=str(duration, tunit=time_unit)
 	parameter_file.write(outputString)
 
 # Enjoy the data, ya filthy animal!
