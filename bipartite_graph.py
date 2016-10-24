@@ -362,27 +362,35 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	for index in kos:
 		transcript_distribution.append(int(transcription_dict[index]))
 
-	print 'Permuting transcript distributions...\n'	
+	print 'Permuting transcript distributions...\n'
+	increment = 100.0 / float(iterations) 
+	progress = 0.0
+	sys.stdout.write('\rProgress: ' + str(progress) + '%')
+	sys.stdout.flush() 
 	all_distributions = set()
 	for index in range(iterations):
-		current_distribution = tuple(random.shuffle(transcript_distribution))
-		if not current_distribution in all_distributions:
-			all_distributions.update(current_distribution)
-			simulation_str = str(compound) + '\t' + '\t'.join([str(x) for x in distribution_dict[compound]]) + '\n'
-			simulation_file.write(simulation_str)
+		random.shuffle(transcript_distribution)
+		if not tuple(transcript_distribution) in all_distributions:
+			all_distributions.add(tuple(transcript_distribution))
+			progress += increment
+			progress = float("%.3f" % progress)
+			sys.stdout.write('\rProgress: ' + str(progress) + '%')
+			sys.stdout.flush() 
 
-	simulation_file.close()
 	all_distributions = list(all_distributions)
-	print 'Done.\n'
+	sys.stdout.write('\rDone.\n')
 	
 	distribution_dict = {}
 	for compound in compound_lst:
 		distribution_dict[compound] = []
 
-	print 'Calculating importance scores for probability distributions...\n'	
-	simulation_file = open('random_score_ranges.tsv', 'w')
-	simulation_str = 'metabolite\titer_' + '\titer_'.join([str(x) for x in range(1,iterations) + '\n'
-	simulation_file.write(simulation_str) 
+	print 'Calculating importance scores for probability distributions...\n'
+	progress = 0.0
+	sys.stdout.write('\rProgress: ' + str(progress) + '%')
+	sys.stdout.flush() 
+	simulation_file = open('randomized_score_ranges.tsv', 'w')
+	simulation_str = 'metabolite\titer_' + '\titer_'.join([str(x) for x in range(1,iterations+1)]) + '\n'
+	simulation_file.write(simulation_str)
 	for index in all_distributions:
 
 		current_distribution = list(index)
@@ -399,8 +407,15 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 			distribution_dict[compound].append(score_dict[compound][1])
 			simulation_str = str(compound) + '\t' + '\t'.join([str(x) for x in distribution_dict[compound]]) + '\n'
 			simulation_file.write(simulation_str)
+	
+		progress += increment
+		progress = float("%.3f" % progress)
+		sys.stdout.write('\rProgress: ' + str(progress) + '%')
+		sys.stdout.flush() 
+
+
 	simulation_file.close()
-	print 'Done.\n'
+	sys.stdout.write('\rDone.\n')
 
 	print 'Calculating summary statistics of each importance score distribution...\n'
 	# Compile the scores for each compound and find the median and standard deviation
@@ -608,7 +623,7 @@ Substrate nodes: {substrate}
 Probability distribution generated: {iter}
 Permutations: {perms}
 Duration: {time} {tunit}
-'''.format(ko=str(KO_input_file), name=str(file_name), iter=iter_str, kos=str(len(KO_lst)), substrate=str(len(compound_lst)), perms=str(iterations), time=str(duration, tunit=time_unit)
+'''.format(ko=str(KO_input_file), name=str(file_name), iter=iter_str, kos=str(len(KO_lst)), substrate=str(len(compound_lst)), perms=str(iterations), time=str(duration), tunit=time_unit)
 	parameter_file.write(outputString)
 
 # Enjoy the data, ya filthy animal!
