@@ -58,7 +58,7 @@ start = time.time()
 parser = argparse.ArgumentParser(description='Generate bipartite metabolic models and calculates importance of substrate nodes based on gene expression.')
 parser.add_argument('input_file')
 parser.add_argument('--name', default='organism', help='Organism or other name for KO+expression file (default is organism)')
-parser.add_argument('--iters', default='1000', help='Number of iterations of probability distribution for score comparison')
+parser.add_argument('--iters', default='100', help='Number of iterations of probability distribution for score comparison')
 args = parser.parse_args()
 
 # Assign variables
@@ -378,7 +378,7 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 			sys.stdout.flush() 
 
 	all_distributions = list(all_distributions)
-	sys.stdout.write('\rDone.\n')
+	sys.stdout.write('\rDone.                       \n\n')
 	
 	distribution_dict = {}
 	for compound in compound_lst:
@@ -415,7 +415,7 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 
 
 	simulation_file.close()
-	sys.stdout.write('\rDone.\n')
+	sys.stdout.write('\rDone.                       \n\n')
 
 	print 'Calculating summary statistics of each importance score distribution...\n'
 	# Compile the scores for each compound and find the median and standard deviation
@@ -466,6 +466,8 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 					current_sig = '<0.01'
 				else:
 					current_sig = '<0.05'
+			else:
+				current_sig = 'n.s.'
 		
 		elif current_score < current_median:
 			if current_score < current_lower_cutoff05:
@@ -473,9 +475,8 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 					current_sig = '<0.01'
 				else:
 					current_sig = '<0.05'
-
-		else:
-			current_sig = 'n.s.'
+			else:
+				current_sig = 'n.s.'
 
 		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_lower_95conf, current_upper_95conf, current_sig])	
 
@@ -557,13 +558,12 @@ print 'Done.\n'
 if iterations > 1:
 	interval_lst = probability_distribution(ko_input_dict, ko_output_dict, degree_dict, KO_lst, compound_name_dictionary, total, seq_max, compound_lst, transcript_dict, iterations)
 	final_data = confidence_interval(score_dict, interval_lst, degree_dict)
-	print 'Done.\n'
-	
+
 	# Write all the calculated data to files
-	print 'Writing score data with Monte Carlo simulation to a file...\n'
+	print 'Writing score data with probability distributions to a file...\n'
 	outname = file_name + '.importance_score.tsv'
 	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_Lower_95_Confidence\tSim_Upper_95_Confidence\tSignificance\n', final_data, outname)
-
+	print 'Done.\n'
 
 # If simulation not performed, write only scores calculated from measured expression to files	
 else:
@@ -584,9 +584,6 @@ print 'Done.\n'
 
 # Wrap everything up
 
-# Return to the directory the script was called to
-os.chdir(starting_directory)	
-
 # Report time if iterations are performed
 end = time.time()
 if end > 10:
@@ -595,9 +592,7 @@ if end > 10:
 else :
 	print '\n'
 	
-print 'Output files located in: ' + directory + '\n\n'
-
-#---------------------------------------------------------------------------------------#		
+print 'Output files located in: ' + directory + '\n\n'		
 
 # Define calculation selection with a string
 if iterations > 1:
@@ -626,6 +621,9 @@ Duration: {time} {tunit}
 '''.format(ko=str(KO_input_file), name=str(file_name), iter=iter_str, kos=str(len(KO_lst)), substrate=str(len(compound_lst)), perms=str(iterations), time=str(duration), tunit=time_unit)
 	parameter_file.write(outputString)
 
-# Enjoy the data, ya filthy animal!
+# Return to the directory the script was called to
+os.chdir(starting_directory)	
 
+
+# Enjoy the data, ya filthy animal!
 
