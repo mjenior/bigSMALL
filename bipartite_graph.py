@@ -384,6 +384,7 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	for compound in compound_lst:
 		distribution_dict[compound] = []
 
+	# Memory intensive, >10 Gb preferrable
 	print 'Calculating importance scores for probability distributions...\n'
 	progress = 0.0
 	sys.stdout.write('\rProgress: ' + str(progress) + '%')
