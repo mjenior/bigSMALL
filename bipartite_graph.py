@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''USAGE: bipartite_graph.py KO_expressionfile --name organism_name --min 0 --degree 0 --iters 1
+'''USAGE: bipartite_graph.py KO_expressionfile --name organism_name --iters 1000
 The function of this script is to convert lists of genes to unweighted, 
 directed graphs and compute importance of each compound to metabolism 
 based on the expression of surrounding enzyme nodes.
@@ -58,7 +58,7 @@ start = time.time()
 parser = argparse.ArgumentParser(description='Generate bipartite metabolic models and calculates importance of substrate nodes based on gene expression.')
 parser.add_argument('input_file')
 parser.add_argument('--name', default='organism', help='Organism or other name for KO+expression file (default is organism)')
-parser.add_argument('--iters', default='100', help='Number of iterations of probability distribution for score comparison')
+parser.add_argument('--iters', default='0', help='Number of iterations of probability distribution for score comparison')
 args = parser.parse_args()
 
 # Assign variables
@@ -389,9 +389,6 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	progress = 0.0
 	sys.stdout.write('\rProgress: ' + str(progress) + '%')
 	sys.stdout.flush() 
-	simulation_file = open('randomized_score_ranges.tsv', 'w')
-	simulation_str = 'metabolite\titer_' + '\titer_'.join([str(x) for x in range(1,iterations+1)]) + '\n'
-	simulation_file.write(simulation_str)
 	for index in all_distributions:
 
 		current_distribution = list(index)
@@ -406,16 +403,12 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		# Make dictionaries of scores for each compound for each direction
 		for compound in compound_lst:
 			distribution_dict[compound].append(score_dict[compound][1])
-			simulation_str = str(compound) + '\t' + '\t'.join([str(x) for x in distribution_dict[compound]]) + '\n'
-			simulation_file.write(simulation_str)
-	
+
 		progress += increment
 		progress = float("%.3f" % progress)
 		sys.stdout.write('\rProgress: ' + str(progress) + '%')
 		sys.stdout.flush() 
 
-
-	simulation_file.close()
 	sys.stdout.write('\rDone.                       \n\n')
 
 	print 'Calculating summary statistics of each importance score distribution...\n'
@@ -430,7 +423,7 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		current_median = float("%.3f" % (numpy.median(unique_dist)))
 
 		# McGill et al. (1978)
-		upper_iqr, lower_iqr, lower_cutoff_05, upper_cutoff_05, lower_cutoff_01, upper_cutoff_01 = numpy.percentile(unique_dist, [75, 25, 5, 95, 1, 99])
+		lower_iqr, upper_iqr, lower_cutoff_05, upper_cutoff_05, lower_cutoff_01, upper_cutoff_01 = numpy.percentile(unique_dist, [25, 75, 5, 95, 1, 99])
 		lower_95 = current_median - abs(1.7 * (lower_iqr / math.sqrt(len(unique_dist))))
 		upper_95 = current_median + abs(1.7 * (upper_iqr / math.sqrt(len(unique_dist))))
 
@@ -556,7 +549,7 @@ print 'Done.\n'
 #---------------------------------------------------------------------------------------#		
 
 # Calculate simulated importance values if specified
-if iterations > 1:
+if iterations >= 1:
 	interval_lst = probability_distribution(ko_input_dict, ko_output_dict, degree_dict, KO_lst, compound_name_dictionary, total, seq_max, compound_lst, transcript_dict, iterations)
 	final_data = confidence_interval(score_dict, interval_lst, degree_dict)
 
