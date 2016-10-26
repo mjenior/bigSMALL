@@ -369,7 +369,10 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	sys.stdout.flush() 
 	all_distributions = set()
 	for index in range(iterations):
-		random.shuffle(transcript_distribution)
+
+		# Generate bootstrapped transcript distributions
+		transcript_distribution = random.sample(transcript_distribution, len(kos))
+
 		if not tuple(transcript_distribution) in all_distributions:
 			all_distributions.add(tuple(transcript_distribution))
 			progress += increment
