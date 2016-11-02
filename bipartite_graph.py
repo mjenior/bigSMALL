@@ -78,7 +78,7 @@ elif os.stat(KO_input_file).st_size == 0:
 elif file_name == '':
 	print('Invalid names argument provided. Aborting.')
 	sys.exit()
-elif iterations < 1:
+elif iterations < 0:
 	print('Invalid iterations value. Aborting.')
 	sys.exit()
 
@@ -426,11 +426,13 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		current_median = float("%.3f" % (numpy.median(unique_dist)))
 
 		# McGill et al. (1978)
-		lower_iqr, upper_iqr, lower_cutoff_05, upper_cutoff_05, lower_cutoff_01, upper_cutoff_01 = numpy.percentile(unique_dist, [25, 75, 5, 95, 1, 99])
+		lower_iqr, upper_iqr = numpy.percentile(unique_dist, [25, 75])
 		lower_95 = current_median - abs(1.7 * (lower_iqr / math.sqrt(len(unique_dist))))
 		upper_95 = current_median + abs(1.7 * (upper_iqr / math.sqrt(len(unique_dist))))
+		lower_99 = current_median - abs(1.95 * (lower_iqr / math.sqrt(len(unique_dist))))
+		upper_99 = current_median + abs(1.95 * (upper_iqr / math.sqrt(len(unique_dist))))
 
-		interval_lst.append([compound, current_median, lower_95, upper_95, lower_cutoff_05, upper_cutoff_05, lower_cutoff_01, upper_cutoff_01])
+		interval_lst.append([compound, current_median, lower_95, upper_95, lower_99, upper_99])
 
 	print 'Done.\n'
 	return interval_lst
@@ -449,33 +451,31 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		current_outdegree = degree_dict[current_compound][2]
 		current_score = float(score_dict[current_compound][1])
 		
-		current_median = float(index[1])
-		current_lower_95conf = float(index[2])
-		current_upper_95conf = float(index[3])
-		current_lower_cutoff05 = float(index[4])
-		current_upper_cutoff05 = float(index[5])
-		current_lower_cutoff01 = float(index[6])
-		current_upper_cutoff01 = float(index[7])
+		current_simmedian = float(index[1])
+		current_simlower_95conf = float(index[2])
+		current_simupper_95conf = float(index[3])
+		current_simlower_99conf = float(index[4])
+		current_simupper_99conf = float(index[5])
 		
-		if current_score > current_median:
-			if current_score > current_upper_cutoff05:
-				if current_score > current_upper_cutoff01:
+		if current_score > current_simmedian:
+			if current_score > current_simupper_95conf:
+				if current_score > current_simupper_99conf:
 					current_sig = '<0.01'
 				else:
 					current_sig = '<0.05'
 			else:
 				current_sig = 'n.s.'
 		
-		elif current_score < current_median:
-			if current_score < current_lower_cutoff05:
-				if current_score < current_lower_cutoff05:
+		elif current_score < current_simmedian:
+			if current_score < current_simlower_95conf:
+				if current_score < current_simlower_99conf:
 					current_sig = '<0.01'
 				else:
 					current_sig = '<0.05'
 			else:
 				current_sig = 'n.s.'
 
-		labeled_confidence.append([current_compound, current_name, current_score, current_median, current_lower_95conf, current_upper_95conf, current_sig])	
+		labeled_confidence.append([current_compound, current_name, current_score, current_sig])	
 
 	return labeled_confidence
 
@@ -559,7 +559,7 @@ if iterations >= 1:
 	# Write all the calculated data to files
 	print 'Writing score data with probability distributions to a file...\n'
 	outname = file_name + '.importance_score.tsv'
-	write_list('Compound_code\tCompound_name\tMetabolite_score\tSim_Median\tSim_Lower_95_Confidence\tSim_Upper_95_Confidence\tSignificance\n', final_data, outname)
+	write_list('Compound_code\tCompound_name\tMetabolite_score\tSignificance\n', final_data, outname)
 	print 'Done.\n'
 
 # If simulation not performed, write only scores calculated from measured expression to files	
