@@ -32,8 +32,8 @@ based on the expression of surrounding enzyme nodes.
 	# A text file containing user defined parameters
 	# List of unique compound nodes
 	# List of unique enzymes nodes
-	# A table containing importance values, node topology, and relationship to simulated medians
-	# A matrix of scores generated during iterative Monte Carlo simulation
+	# Table containing network topology
+	# Table containing importance values and significance (when applicable)
 
 #---------------------------------------------------------------------------------------#		
 
