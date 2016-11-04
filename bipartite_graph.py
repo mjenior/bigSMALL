@@ -475,7 +475,7 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 			else:
 				current_sig = 'n.s.'
 
-		labeled_confidence.append([current_compound, current_name, current_score, current_sig, current_simlower_95conf, current_simupper_95conf])	
+		labeled_confidence.append([current_compound, current_name, current_score, current_sig])	
 
 	return labeled_confidence
 
@@ -486,6 +486,24 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 #																						 #
 ##########################################################################################		
 
+
+# Citation text
+print '''\nbigSMALL v1.0
+Released: 12/01/2016
+
+by
+Matthew L. Jenior
+
+Department of Microbiology & Immunology
+University of Michigan
+mljenior@umich.edu
+
+When using, please cite:
+Jenior, ML, et al., .
+
+Distributed under the GNU General Public License\n\n'''
+
+#---------------------------------------------------------------------------------------#		
 
 # Print organism name to screen to track progress in case of loop
 if file_name != 'organism':
@@ -559,7 +577,7 @@ if iterations >= 1:
 	# Write all the calculated data to files
 	print 'Writing score data with probability distributions to a file...\n'
 	outname = file_name + '.importance_score.tsv'
-	write_list('Compound_code\tCompound_name\tMetabolite_score\tSignificance\tLower_95_Confidence\tUpper_95_Confidence\n', final_data, outname)
+	write_list('Compound_code\tCompound_name\tMetabolite_score\tSignificance\n', final_data, outname)
 	print 'Done.\n'
 
 # If simulation not performed, write only scores calculated from measured expression to files	
