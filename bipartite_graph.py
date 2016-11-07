@@ -58,7 +58,7 @@ start = time.time()
 parser = argparse.ArgumentParser(description='Generate bipartite metabolic models and calculates importance of substrate nodes based on gene expression.')
 parser.add_argument('input_file')
 parser.add_argument('--name', default='organism', help='Organism or other name for KO+expression file (default is organism)')
-parser.add_argument('--iters', default='0', help='Number of iterations of probability distribution for score comparison')
+parser.add_argument('--iters', default=1000, help='Number of iterations of probability distribution for score comparison')
 args = parser.parse_args()
 
 # Assign variables
