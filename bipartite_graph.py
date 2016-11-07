@@ -577,7 +577,7 @@ if iterations >= 1:
 	# Write all the calculated data to files
 	print 'Writing score data with probability distributions to a file...\n'
 	outname = file_name + '.importance_score.tsv'
-	write_list('Compound_code\tCompound_name\tMetabolite_score\tSignificance\n', final_data, outname)
+	write_list('Compound_code\tCompound_name\tMetabolite_score\tp_value\n', final_data, outname)
 	print 'Done.\n'
 
 # If simulation not performed, write only scores calculated from measured expression to files	
