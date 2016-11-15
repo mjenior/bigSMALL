@@ -428,9 +428,13 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		# McGill et al. (1978)
 		lower_iqr, upper_iqr = numpy.percentile(unique_dist, [25, 75])
 		lower_95 = current_median - abs(1.7 * (lower_iqr / math.sqrt(len(unique_dist))))
+		lower_95 = float("%.3f" % lower_95)
 		upper_95 = current_median + abs(1.7 * (upper_iqr / math.sqrt(len(unique_dist))))
+		upper_95 = float("%.3f" % upper_95)
 		lower_99 = current_median - abs(1.95 * (lower_iqr / math.sqrt(len(unique_dist))))
+		lower_99 = float("%.3f" % lower_99)
 		upper_99 = current_median + abs(1.95 * (upper_iqr / math.sqrt(len(unique_dist))))
+		upper_99 = float("%.3f" % upper_99)
 
 		interval_lst.append([compound, current_median, lower_95, upper_95, lower_99, upper_99])
 
