@@ -58,7 +58,7 @@ start = time.time()
 parser = argparse.ArgumentParser(description='Generate bipartite metabolic models and calculates importance of substrate nodes based on gene expression.')
 parser.add_argument('input_file')
 parser.add_argument('--name', default='organism', help='Organism or other name for KO+expression file (default is organism)')
-parser.add_argument('--iters', default=1000, help='Number of iterations of probability distribution for score comparison')
+parser.add_argument('--iters', default='1000', help='Number of iterations of probability distribution for score comparison')
 args = parser.parse_args()
 
 # Assign variables
@@ -146,13 +146,23 @@ def write_dictionary_short(header, out_dict, file_name):
 		if not header == 'none': out_file.write(header)
 			
 		for index in all_keys:
-
 			entry = index + '\t' + str(out_dict[index]) + '\n'
 			out_file.write(entry)
 
-			element = str(out_dict[index]) + '\n'
-			entry = [index, element]
-			out_file.write('\t'.join(entry))
+	out_file.close()
+
+
+def write_dictionary_list(header, out_dict, file_name):
+
+	all_keys = out_dict.keys()
+	
+	with open(file_name, 'w') as out_file: 
+		
+		if not header == 'none': out_file.write(header)
+			
+		for index in all_keys:
+			entry = index + '\t' + ','.join(out_dict[index]) + '\n'
+			out_file.write(entry)
 
 	out_file.close()
 
@@ -594,9 +604,12 @@ else:
 print 'Writing network topology and original transcipt counts to files...\n'
 outname = file_name + '.topology.tsv'
 write_dictionary('Compound_code\tCompound_name\tIndegree\tOutdegree\n', degree_dict, outname)
-outname = file_name + '.original_mapping.txt'
 outname = file_name + '.mapping.tsv'
 write_dictionary_short('KO_code\tTranscripts\n', transcript_dict, outname)
+outname = file_name + '.input_codes.tsv'
+write_dictionary_list('KO_code\tCompound_codes\n', ko_input_dict, outname)
+outname = file_name + '.output_codes.tsv'
+write_dictionary_list('KO_code\tCompound_codes\n', ko_output_dict, outname)
 print 'Done.\n'
 
 #---------------------------------------------------------------------------------------#		
