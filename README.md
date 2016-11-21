@@ -23,7 +23,7 @@ Examples of input files for each program can be found in the examples directory
 
 ---------------------------------------------------------------------------
 
-# Section 1 - bipartite_graph.py
+# Section 1 - bigsmall.py
 Calculates relative importance of a given metabolite based on the expression of surrounding enzymes in a metabolic network
 
 # Basic usage:
@@ -48,10 +48,10 @@ expression_file
 
 ##Under construction
 
-# Section 2 - interact_bipartite.py
+# Section 2 - interaction.py
 
 # Basic usage:
-python interact_bipartite.py --files1 organism_1.scc.files --files2 organism_2.scc.files
+python interaction.py --files1 organism_1.scc.files --files2 organism_2.scc.files
 
 # Additional Options:
 **Required arguments:**

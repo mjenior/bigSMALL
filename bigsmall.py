@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''USAGE: bipartite_graph.py KO_expressionfile --name organism_name --iters 1000
+'''USAGE: bigsmall.py KO_expressionfile --name organism_name --iters 1000
 The function of this script is to convert lists of genes to unweighted, 
 directed graphs and compute importance of each compound to metabolism 
 based on the expression of surrounding enzyme nodes.

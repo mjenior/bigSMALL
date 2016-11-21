@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''USAGE: python python interact_bipartite.py --seedfiles1 organism_1.files --seedfiles2 organism_2.files --name1 organism_1 --name2 organism_2 --stdev 0
+'''USAGE: python python interaction.py --seedfiles1 organism_1.files --seedfiles2 organism_2.files --name1 organism_1 --name2 organism_2 --stdev 0
 
 '''
 
