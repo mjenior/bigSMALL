@@ -1,6 +1,23 @@
 bigsmall or *B*acter*I*al *G*enome-*S*cale *M*etabolic models for *A*pp*L*ied reverse eco*L*ogy
 ============
 
+bigSMALL v1.0
+Released: 12/01/2016
+
+by
+Matthew L. Jenior
+
+Department of Microbiology & Immunology
+University of Michigan
+mljenior@umich.edu
+
+When using, please cite:
+Jenior, M.L., Leslie, J.L., Young, V.B., Schloss, P.D. (2016). Clostridium difficile colonizes alternative nutrient niches during infection across distinct murine gut environments. ...
+
+Distributed under the GNU General Public License
+
+---------------------------------------------------------------------------
+
 Python scripts and workflow by Matthew Jenior, University of Michigan, 2014 - 2016
 
 ---------------------------------------------------------------------------

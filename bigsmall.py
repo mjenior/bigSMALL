@@ -513,7 +513,7 @@ University of Michigan
 mljenior@umich.edu
 
 When using, please cite:
-Jenior, ML, et al., .
+Jenior, M.L., Leslie, J.L., Young, V.B., Schloss, P.D. (2016). Clostridium difficile colonizes alternative nutrient niches during infection across distinct murine gut environments. ...
 
 Distributed under the GNU General Public License\n\n'''
 
