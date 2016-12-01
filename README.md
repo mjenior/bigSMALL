@@ -13,17 +13,7 @@ Examples of input files for each program can be found in the examples directory
 
 ---------------------------------------------------------------------------
 
-# Index:
-
-**Section 1:**  Generating bipartite metabolic models used in conjunction with transcriptomics
-
-**Section 2:**  Comparing bipartite metabolic model importance values between species
-
-**Section 3:**  Appendix describing example files for each script
-
----------------------------------------------------------------------------
-
-# Section 1 - bigsmall.py
+# bigsmall.py
 Calculates relative importance of a given metabolite based on the expression of surrounding enzymes in a metabolic network
 
 # Basic usage:
@@ -46,32 +36,7 @@ expression_file
 
 ---------------------------------------------------------------------------
 
-##Under construction
-
-# Section 2 - interaction.py
-
-# Basic usage:
-python interaction.py --files1 organism_1.scc.files --files2 organism_2.scc.files
-
-# Additional Options:
-**Required arguments:**
-
---files1 FILES1		 Directory of bipartite network output for first (meta)organism
-
---files2 FILES2		Directory of bipartite network output for second (meta)organism
-
-**Optional arguments:**
-
--h, --help		show this help message and exit
-
---name1 NAME1		Name of first (meta)organism
-
---name2 NAME2		Name of second (meta)organism
-
-
----------------------------------------------------------------------------
-
-# Section 3 - Appendix
+# Supporting files
 
 **Sample files to be used as examples with each of the respective scripts**
 
@@ -83,15 +48,8 @@ ko_expression.bipartite.files - Output of bipartite_graph.py for Clostridium dif
 
 # Citations
 
-Nielsen paper
+McGill, R., Tukey, J. W. & Larsen, W. A. (1978). Variations of Box Plots. The American Statistician 32, 12–16.
 
-KEGG
+Ogata, H. et al. (1999). KEGG: Kyoto encyclopedia of genes and genomes. 27, 29–34.
 
-IQR for medians
-
-
-
-
-
-
-
+Patil, K. R. & Nielsen, J. (2004). Uncovering transcriptional regulation of metabolism by using metabolic network topology. PNAS 102 (8), 2685–2689.
