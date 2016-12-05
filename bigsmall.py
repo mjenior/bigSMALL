@@ -567,11 +567,11 @@ reaction_graph, ko_input_dict, ko_output_dict, compound_lst, KO_lst = network_di
 #---------------------------------------------------------------------------------------#	
 
 # Write compounds and enzymes to files
-write_list_short('none', compound_lst, 'compound.lst')
+write_list_short('none', compound_lst, 'metabolite.lst')
 write_list_short('none', KO_lst, 'enzyme.lst')
 
 # Write network to a two column matrix for use in Neo4j or R
-write_list('none', reaction_graph, 'bipartite_graph.tsv')
+write_list('none', reaction_graph, 'graph.tsv')
 
 #---------------------------------------------------------------------------------------#	
 
@@ -590,25 +590,25 @@ if iterations >= 1:
 
 	# Write all the calculated data to files
 	print 'Writing score data with probability distributions to a file...\n'
-	outname = file_name + '.importance_score.tsv'
+	outname = 'importances.tsv'
 	write_list('Compound_code\tCompound_name\tMetabolite_score\tp_value\n', final_data, outname)
 	print 'Done.\n'
 
 # If simulation not performed, write only scores calculated from measured expression to files	
 else:
 	print 'Writing score data to a file...\n' 
-	outname = file_name + '.importance_score.tsv'
+	outname = 'importances.tsv'
 	write_dictionary_short('Compound_code\tCompound_name\tMetabolite_score\n', score_dict, outname)
 	print 'Done.\n'
 
 print 'Writing network topology and original transcipt counts to files...\n'
-outname = file_name + '.topology.tsv'
+outname = 'topology.tsv'
 write_dictionary('Compound_code\tCompound_name\tIndegree\tOutdegree\n', degree_dict, outname)
-outname = file_name + '.mapping.tsv'
-write_dictionary_short('KO_code\tTranscripts\n', transcript_dict, outname)
-outname = file_name + '.input_codes.tsv'
+#outname = 'mapping.tsv'
+#write_dictionary_short('KO_code\tTranscripts\n', transcript_dict, outname)
+outname = 'input_metabolites.tsv'
 write_dictionary_list('KO_code\tCompound_codes\n', ko_input_dict, outname)
-outname = file_name + '.output_codes.tsv'
+outname = 'output_metabolites.tsv'
 write_dictionary_list('KO_code\tCompound_codes\n', ko_output_dict, outname)
 print 'Done.\n'
 
