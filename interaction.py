@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-'''USAGE: python python interact_bipartite.py --seedfiles1 organism_1.files --seedfiles2 organism_2.files --name1 organism_1 --name2 organism_2 --stdev 0
-
+'''USAGE: python python interact_bipartite.py --interactions interaction.files --p_value n.s.
+Calculates potential metabolic crosstalk within communities of bacteria based on output from bigSMALL
 '''
 
 # Initialize all modules, functions, and compound dictionary
@@ -10,9 +10,7 @@ import os
 import pickle
 import argparse
 
-
 #---------------------------------------------------------------------------------------#
-
 
 # Find the directory where interaction.py is being run from
 script_path = str(os.path.dirname(os.path.realpath(__file__)))
@@ -23,6 +21,35 @@ starting_directory = str(os.getcwd())
 #---------------------------------------------------------------------------------------#
 
 # Define some functions
+
+# Function to read in all species cominations from interaction file
+def read_files(file_names):
+
+	names = []
+	omit = []
+
+	for line in file_names:
+
+		species_1 = str(line.split()[0])
+		species_2 = str(line.split()[1])
+		if species_1 in omit or species_2 in omit:
+			continue
+
+		if os.path.exists(species_1) == False:
+			print('WARNING: ' + species_1 + ' does not exist. Omitting combinations.')
+			omit.append(species_1)
+			continue
+		elif os.path.exists(species_2) == False:
+			print('WARNING: ' + species_2 + ' does not exist. Omitting combinations.')
+			omit.append(species_2)
+			continue
+
+		entry = [species_1, species_2]
+		names.append(entry)
+	
+	print('\n')
+	return names
+
 
 # Function to get the organism name from the bigSMALL parameters file
 def read_parameters(parameters):
@@ -139,7 +166,7 @@ def interaction(score_dict1, score_dict2):
 
 		interaction_score = str(score1 + score2)
 	
-		entry = [index, name, interaction_score]
+		entry = [index, name, str(score1), str(score2), interaction_score]
 		interaction_list.append(entry)
 
 	return interaction_list
@@ -160,42 +187,53 @@ def write_output(header, out_data, p_cutoff, file_name):
 #---------------------------------------------------------------------------------------#
 
 # Set up arguments
-parser = argparse.ArgumentParser(description='Calculate metabolic interaction of two species from the output of bigSMALL.')
-parser.add_argument('--species_1', default='none', help='Directory of SCC network output for first (meta)organism')
-parser.add_argument('--species_2', default='none', help='Directory of SCC network output for second (meta)organism')
-parser.add_argument('--p_value', default='n.s.', help='Minimum confidence values for seeds and sinks to be considered in calculations')
+parser = argparse.ArgumentParser(description='Calculate metabolic pair-wise interactions of species from the output of bigSMALL.')
+parser.add_argument('--interactions', default='none', help='2 column list of species interactors with bigSMALL output for each (directories)')
+parser.add_argument('--p_value', default='n.s.', help='Minimum p-value for metabolites to be considered in calculations')
 
 args = parser.parse_args()
-species_1 = args.species_1
-species_2 = args.species_2
+interactions = args.interactions
 p_value = float(args.p_value)
 
-if species_1 ==  'none' or species_2 ==  'none': sys.exit('WARNING: Missing input file(s), quitting')
-if os.path.exists(species_1) == False or os.path.exists(species_2) == False: sys.exit('WARNING: Missing input file(s), quitting')
+if interactions ==  'none': sys.exit('WARNING: Missing input file, quitting')
 if p_value != 'n.s.' and p_value < 0.0: sys.exit('WARNING: p-value cutoff is less than 0, quitting')
 
 #---------------------------------------------------------------------------------------#
 
 # Retrieve and read in the necessary files
-print('\nReading in importance files.\n')
-os.chdir(species_1)
-name_1 = read_parameters(open('parameters.txt','r'))
-scores_1 = convert_scores(open('importances.tsv','r'), p_value)
-os.chdir(starting_directory)
-os.chdir(species_2)
-name_2 = read_parameters(open('parameters.txt','r'))
-scores_2 = convert_scores(open('importances.tsv','r'), p_value)
-os.chdir(starting_directory)
+print('\nReading in interaction file.\n')
+all_interations = read_files(interactions)
 
-# Calculate putative metabolic interactions and parse the output
-print('Calculating putative interaction of ' + name_1 + ' and ' + name_2 + '.\n')
-crosstalk = interaction(scores_1, scores_2)
+interaction_count = len(all_interations)
+current = 1
 
-#---------------------------------------------------------------------------------------#
+for index in all_interations:
 
-# Write output tables and summary to files
-head = 'Compound_code\tCompound_name\tInteraction_score\tp_value\n'
-file = name_1 + 'AND' + name_2 + '.interaction.tsv'
-write_output(head, crosstalk, p_value, file)
+	print('Calculating interaction ' + str(current) + ' of ' + str(interaction_count) + '.')
+
+	# Retrieve individual species information
+	species_1 = index[0]
+	species_2 = index[1]
+	os.chdir(species_1)
+	name_1 = read_parameters(open('parameters.txt','r'))
+	scores_1 = convert_scores(open('importances.tsv','r'), p_value)
+	os.chdir(starting_directory)
+	os.chdir(species_2)
+	name_2 = read_parameters(open('parameters.txt','r'))
+	scores_2 = convert_scores(open('importances.tsv','r'), p_value)
+	os.chdir(starting_directory)
+	
+	# Calculate putative metabolic interactions and parse the output
+	print('Calculating putative interaction of ' + name_1 + ' and ' + name_2 + '.\n')
+	crosstalk = interaction(scores_1, scores_2)
+	current += 1
+		
+	# Write output tables and summary to files
+	head = 'Compound_code\tCompound_name\tSpecies_1_score\tSpecies_2_score\tInteraction_score\tp_value\n'
+	file = name_1 + 'AND' + name_2 + '.interaction.tsv'
+	write_output(head, crosstalk, p_value, file)
+
 
 print('Done.\n')
+
+
