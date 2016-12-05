@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''USAGE: python python interact_bipartite.py --interactions interaction.files --p_value n.s.
+'''USAGE: python python interactions.py --interactions interaction.files --p_value n.s.
 Calculates potential metabolic crosstalk within communities of bacteria based on output from bigSMALL
 '''
 
