@@ -188,11 +188,11 @@ def write_output(header, out_data, p_cutoff, file_name):
 
 # Set up arguments
 parser = argparse.ArgumentParser(description='Calculate metabolic pair-wise interactions of species from the output of bigSMALL.')
-parser.add_argument('--interactions', default='none', help='2 column list of species interactors with bigSMALL output for each (directories)')
+parser.add_argument('input_file')
 parser.add_argument('--p_value', default='n.s.', help='Minimum p-value for metabolites to be considered in calculations')
 
 args = parser.parse_args()
-interactions = args.interactions
+interactions = str(args.input_file)
 p_value = float(args.p_value)
 
 if interactions ==  'none': sys.exit('WARNING: Missing input file, quitting')
