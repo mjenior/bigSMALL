@@ -46,7 +46,7 @@ python bipartite_graph.py ko_expression.list
 # Options:
 **Positional, required argument:**
 
-expression_file     2 column file o
+expression_file     2 column file of KEGG ID and transcript abundance
 
 **Optional arguments:**
 
