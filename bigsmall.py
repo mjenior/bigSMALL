@@ -645,6 +645,3 @@ Duration: {time} {tunit}
 # Return to the directory the script was called to
 os.chdir(starting_directory)	
 
-
-# Enjoy the data, ya filthy animal!
-
