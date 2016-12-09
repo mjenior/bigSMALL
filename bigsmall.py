@@ -369,6 +369,7 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 def confidence_interval(score_dict, interval_lst, degree_dict):
 
 	labeled_confidence = []
+	sig_count = 0
 
 	for index in interval_lst:
 		
@@ -388,8 +389,10 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 			if current_score > current_simupper_95conf:
 				if current_score > current_simupper_99conf:
 					current_sig = '<0.01'
+					sig_count += 1
 				else:
 					current_sig = '<0.05'
+					sig_count += 1
 			else:
 				current_sig = 'n.s.'
 		
@@ -397,12 +400,16 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 			if current_score < current_simlower_95conf:
 				if current_score < current_simlower_99conf:
 					current_sig = '<0.01'
+					sig_count += 1
 				else:
 					current_sig = '<0.05'
+					sig_count += 1
 			else:
 				current_sig = 'n.s.'
 
 		labeled_confidence.append([current_compound, current_name, current_score, current_sig])	
+
+	print('Detected ' + str(sig_count) + ' metabolites.\n')
 
 	return labeled_confidence
 
@@ -484,9 +491,9 @@ def write_dictionary_list(header, out_dict, file_name):
 
 
 ##########################################################################################		
-#											 #
-# 				     Do The Analysis!				 	 #
-#											 #
+#											 											 #
+#									Do The Analysis!								 	 #
+#											 											 #
 ##########################################################################################		
 
 
