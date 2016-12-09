@@ -46,15 +46,15 @@ python bipartite_graph.py ko_expression.list
 # Options:
 **Positional, required argument:**
 
-expression_file       two column file of KEGG ID and transcript abundance
+expression_file - two column file of KEGG ID and transcript abundance
 
 **Optional arguments:**
 
--h, --help		show this help message and exit
+-h, --help - show this help message and exit
 
---name          Organism or other name for KO+expression file (default is organism)
+--name - Organism or other name for KO+expression file (default is organism)
 
---iters         iterations for random distribution subsampling (default is 1000)
+--iters - iterations for random distribution subsampling (default is 1000)
 
 
 #---------------------------------------------------------------------------#
