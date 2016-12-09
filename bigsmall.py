@@ -280,13 +280,6 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 # Perform iterative simulation to create confidence interval for compound importance values
 def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, compound_name_dict, seq_total, seq_max, compound_lst, transcription_dict, iterations):
 	
-
-
-	sample_dist_file = open('test_distribution.txt', 'w')		# REMOVE
-
-
-
-
 	# Screen transcript distribution for those KOs included in the metabolic network
 	transcript_distribution = []
 	for index in kos:
@@ -303,32 +296,12 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		# Generate bootstrapped transcript distributions
 		transcript_distribution = random.sample(transcript_distribution, len(kos))
 
-
-
-
-
-		sample_entry = str(transcript_distribution[0]) + '\n'		# REMOVE
-		sample_dist_file.write(sample_entry)		# REMOVE
-
-
-
-
-
-
 		if not tuple(transcript_distribution) in all_distributions:
 			all_distributions.add(tuple(transcript_distribution))
 			progress += increment
 			progress = float("%.3f" % progress)
 			sys.stdout.write('\rProgress: ' + str(progress) + '%')
 			sys.stdout.flush() 
-
-
-
-
-	sample_dist_file.close()		# REMOVE
-
-
-
 
 	all_distributions = list(all_distributions)
 	sys.stdout.write('\rDone.                       \n\n')
@@ -367,23 +340,24 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	print 'Calculating summary statistics of each importance score distribution...\n'
 	# Compile the scores for each compound and find the median and standard deviation
 	interval_lst = []
+
 	for compound in compound_lst:
 
 		# Get the distribution
-		unique_dist = list(set(distribution_dict[compound]))
+		current_dist = list(distribution_dict[compound])
 
 		# Calculate median
-		current_median = float("%.3f" % (numpy.median(unique_dist)))
+		current_median = float("%.3f" % (numpy.median(current_dist)))
 
 		# McGill et al. (1978)
-		lower_iqr, upper_iqr = numpy.percentile(unique_dist, [25, 75])
-		lower_95 = current_median - abs(1.7 * (lower_iqr / math.sqrt(len(unique_dist))))
+		lower_iqr, upper_iqr = numpy.percentile(current_dist, [25, 75])
+		lower_95 = current_median - abs(1.7 * (lower_iqr / math.sqrt(len(current_dist))))
 		lower_95 = float("%.3f" % lower_95)
-		upper_95 = current_median + abs(1.7 * (upper_iqr / math.sqrt(len(unique_dist))))
+		upper_95 = current_median + abs(1.7 * (upper_iqr / math.sqrt(len(current_dist))))
 		upper_95 = float("%.3f" % upper_95)
-		lower_99 = current_median - abs(1.95 * (lower_iqr / math.sqrt(len(unique_dist))))
+		lower_99 = current_median - abs(1.95 * (lower_iqr / math.sqrt(len(current_dist))))
 		lower_99 = float("%.3f" % lower_99)
-		upper_99 = current_median + abs(1.95 * (upper_iqr / math.sqrt(len(unique_dist))))
+		upper_99 = current_median + abs(1.95 * (upper_iqr / math.sqrt(len(current_dist))))
 		upper_99 = float("%.3f" % upper_99)
 
 		interval_lst.append([compound, current_median, lower_95, upper_95, lower_99, upper_99])
@@ -436,7 +410,7 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 
 		labeled_confidence.append([current_compound, current_name, current_score, current_sig])	
 
-	print('Detected ' + str(sig_count) + ' metabolites.\n')
+	print('Detected ' + str(sig_count) + ' significant of ' + str(len(interval_lst)) + ' total metabolites.\n')
 
 	return labeled_confidence
 
