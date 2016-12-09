@@ -7,15 +7,6 @@ based on the expression of surrounding enzyme nodes.
 
 # Written by Matthew Jenior, University of Michigan, Schloss Laboratory, 2016
 
-# Our equation for metabolite score is a variation of Eigenvector centrality and incorporates both 
-# expression of local enzymes and degree of connectedness of each compound node in the calculation.  
-# Relative importance of each surrounding compound node is then calculated by dividing the sum of 
-# surrounding transcripts (the eigenvalue) by the number of edges connected to the node of interest.  
-# This is repeated respective to incoming and outgoing edges.  Output scores are then subtracted 
-# from input values then log2 transformed.  A simulated distribution of transcript abundance is 
-# then created and repeatedly subsampled to generate confidence interval to compare the calculated 
-# importances against and highlight compounds scoring outside a random interval.
-
 # Dependencies:  
 # The script itself needs to be run from from a directory containing the /support/ sub-directory
 # The only argument is a 2 column matrix text file containing a column of KO codes with corresponding expression
@@ -88,84 +79,6 @@ file_name = file_name.replace(' ', '_')
 #---------------------------------------------------------------------------------------#			
 
 # Define all the functions!
-
-# Function to write lists to files	
-def write_list(header, out_lst, file_name):
-
-	with open(file_name, 'w') as out_file: 
-		
-		if not header == 'none': out_file.write(header)
-			
-		for index in out_lst:
-			index = [str(x) for x in index]
-			index[-1] = str(index[-1]) + '\n'
-			out_file.write('\t'.join(index))
-
-	out_file.close()
-
-
-def write_list_short(header, out_lst, file_name):
-
-	with open(file_name, 'w') as out_file: 
-		
-		if not header == 'none': out_file.write(header)
-			
-		for index in out_lst:
-			index = [str(x) for x in index]
-			index[-1] = str(index[-1]) + '\n'
-			out_file.write(''.join(index))
-
-	out_file.close()
-			
-
-# Function to write dictionaries to files	
-def write_dictionary(header, out_dict, file_name):
-
-	all_keys = out_dict.keys()
-	
-	with open(file_name, 'w') as out_file: 
-		
-		if not header == 'none': out_file.write(header)
-			
-		for index in all_keys:
-			elements = out_dict[index]
-			elements.insert(0, index)
-			elements = [str(x) for x in elements]
-			elements[-1] = elements[-1] + '\n'
-			out_file.write('\t'.join(elements))
-
-	out_file.close()
-
-
-def write_dictionary_short(header, out_dict, file_name):
-
-	all_keys = out_dict.keys()
-	
-	with open(file_name, 'w') as out_file: 
-		
-		if not header == 'none': out_file.write(header)
-			
-		for index in all_keys:
-			entry = index + '\t' + str(out_dict[index]) + '\n'
-			out_file.write(entry)
-
-	out_file.close()
-
-
-def write_dictionary_list(header, out_dict, file_name):
-
-	all_keys = out_dict.keys()
-	
-	with open(file_name, 'w') as out_file: 
-		
-		if not header == 'none': out_file.write(header)
-			
-		for index in all_keys:
-			entry = index + '\t' + ','.join(out_dict[index]) + '\n'
-			out_file.write(entry)
-
-	out_file.close()
-
 
 # Create a dictionary for transcript value associated with its KO
 def transcription_dictionary(KO_file):
@@ -494,10 +407,86 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 	return labeled_confidence
 
 
+# Function to write lists to files	
+def write_list(header, out_lst, file_name):
+
+	with open(file_name, 'w') as out_file: 
+		
+		if not header == 'none': out_file.write(header)
+			
+		for index in out_lst:
+			index = [str(x) for x in index]
+			index[-1] = str(index[-1]) + '\n'
+			out_file.write('\t'.join(index))
+
+	out_file.close()
+
+# Specialized version of previous function
+def write_list_short(header, out_lst, file_name):
+
+	with open(file_name, 'w') as out_file: 
+		
+		if not header == 'none': out_file.write(header)
+			
+		for index in out_lst:
+			index = [str(x) for x in index]
+			index[-1] = str(index[-1]) + '\n'
+			out_file.write(''.join(index))
+
+	out_file.close()
+			
+
+# Function to write dictionaries to files (next 2 functions are similar)	
+def write_dictionary(header, out_dict, file_name):
+
+	all_keys = out_dict.keys()
+	
+	with open(file_name, 'w') as out_file: 
+		
+		if not header == 'none': out_file.write(header)
+			
+		for index in all_keys:
+			elements = out_dict[index]
+			elements.insert(0, index)
+			elements = [str(x) for x in elements]
+			elements[-1] = elements[-1] + '\n'
+			out_file.write('\t'.join(elements))
+
+	out_file.close()
+
+def write_dictionary_short(header, out_dict, file_name):
+
+	all_keys = out_dict.keys()
+	
+	with open(file_name, 'w') as out_file: 
+		
+		if not header == 'none': out_file.write(header)
+			
+		for index in all_keys:
+			entry = index + '\t' + str(out_dict[index]) + '\n'
+			out_file.write(entry)
+
+	out_file.close()
+
+def write_dictionary_list(header, out_dict, file_name):
+
+	all_keys = out_dict.keys()
+	
+	with open(file_name, 'w') as out_file: 
+		
+		if not header == 'none': out_file.write(header)
+			
+		for index in all_keys:
+			entry = index + '\t' + ','.join(out_dict[index]) + '\n'
+			out_file.write(entry)
+
+	out_file.close()
+
+
 ##########################################################################################		
-#																						 #
-# 										 DO WORK										 #
-#																						 #
+#											 #
+# 				     Do The Analysis!				 	 #
+#											 #
 ##########################################################################################		
 
 
