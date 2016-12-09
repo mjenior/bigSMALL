@@ -280,6 +280,13 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 # Perform iterative simulation to create confidence interval for compound importance values
 def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, compound_name_dict, seq_total, seq_max, compound_lst, transcription_dict, iterations):
 	
+
+
+	sample_dist_file = open('test_distribution.txt', 'w')		# REMOVE
+
+
+
+
 	# Screen transcript distribution for those KOs included in the metabolic network
 	transcript_distribution = []
 	for index in kos:
@@ -296,12 +303,32 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		# Generate bootstrapped transcript distributions
 		transcript_distribution = random.sample(transcript_distribution, len(kos))
 
+
+
+
+
+		sample_entry = str(transcript_distribution[0]) + '\n'		# REMOVE
+		sample_dist_file.write(sample_entry)		# REMOVE
+
+
+
+
+
+
 		if not tuple(transcript_distribution) in all_distributions:
 			all_distributions.add(tuple(transcript_distribution))
 			progress += increment
 			progress = float("%.3f" % progress)
 			sys.stdout.write('\rProgress: ' + str(progress) + '%')
 			sys.stdout.flush() 
+
+
+
+
+	sample_dist_file.close()		# REMOVE
+
+
+
 
 	all_distributions = list(all_distributions)
 	sys.stdout.write('\rDone.                       \n\n')
