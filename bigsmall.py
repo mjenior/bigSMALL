@@ -362,7 +362,7 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		# Calculate median
 		current_median = numpy.median(current_dist)
 
-		# McGill et al. (1978)
+		# McGill et al. (1978). Variations of Box Plots. The American Statistician, 32:1, 12-16.
 		lower_iqr, upper_iqr = numpy.percentile(current_dist, [25, 75])
 		numerator = 1.25 * abs(upper_iqr - lower_iqr)
 		denominator = 1.35 * math.sqrt(len(current_dist))
