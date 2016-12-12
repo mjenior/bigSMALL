@@ -37,6 +37,7 @@ import argparse
 import random
 import numpy
 import time
+import datetime
 
 #---------------------------------------------------------------------------------------#		
 
@@ -48,7 +49,7 @@ start = time.time()
 # User defined arguments
 parser = argparse.ArgumentParser(description='Generate bipartite metabolic models and calculates importance of substrate nodes based on gene expression.')
 parser.add_argument('input_file')
-parser.add_argument('--name', default='organism', help='Organism or other name for KO+expression file (default is organism)')
+parser.add_argument('--name', default='default', help='Organism or other name for KO+expression file (default is organism)')
 parser.add_argument('--iters', default='1000', help='Number of iterations of probability distribution for score comparison')
 args = parser.parse_args()
 
@@ -311,8 +312,8 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	for compound in compound_lst:
 		distribution_dict[compound] = []
 
-	# Memory intensive, >10 Gb preferrable
-	print 'Calculating importance scores for probability distributions...\n'
+	# Memory intensive
+	print 'Calculating importance scores for ' + str(iterations) + ' probability distributions...\n'
 	progress = 0.0
 	sys.stdout.write('\rProgress: ' + str(progress) + '%')
 	sys.stdout.flush() 
@@ -368,7 +369,7 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		denominator = 1.35 * math.sqrt(len(current_dist))
 		range_factor = numerator / denominator
 		range_95 = 1.6 * range_factor
-		range_99 1.9 * range_factor
+		range_99 = 1.9 * range_factor
 		lower_95 = float("%.3f" % (current_median - range_95))
 		upper_95 = float("%.3f" % (current_median + range_95))
 		lower_99 = float("%.3f" % (current_median - range_99))
@@ -526,8 +527,14 @@ Distributed under the GNU General Public License\n\n'''
 #---------------------------------------------------------------------------------------#		
 
 # Print organism name to screen to track progress in case of loop
-if file_name != 'organism':
+if file_name != 'default':
 	print '\nImputing metabolism for ' + file_name + '\n'
+else:
+	current_time = datetime.datetime.now().time()
+	current_time = current_time.strftime('%s/%d/%m/%Y')
+	current_time = current_time.replace('/','_')
+	current_time = current_time.replace('-','')
+	file_name = current_time
 
 # Read in and create dictionary for expression
 with open(KO_input_file, 'r') as KO_file:

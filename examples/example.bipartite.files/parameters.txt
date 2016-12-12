@@ -1,0 +1,8 @@
+User Defined Parameters
+KO expression file: ko_expression.tsv
+Graph name: example
+KEGG ortholog nodes: 448
+Substrate nodes: 758
+Probability distribution generated: yes
+Permutations: 1000
+Duration: 3 seconds

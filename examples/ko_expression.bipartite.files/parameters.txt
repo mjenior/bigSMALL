@@ -1,6 +1,0 @@
-User Defined Parameters
-KO expression file: ko_expression.tsv
-Graph name: ko_expression
-KEGG ortholog nodes: 1184
-Substrate nodes: 758
-Monte Carlo simulation iterations: 100
