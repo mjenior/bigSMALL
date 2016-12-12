@@ -360,18 +360,19 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		current_dist = list(distribution_dict[compound])
 
 		# Calculate median
-		current_median = float("%.3f" % (numpy.median(current_dist)))
+		current_median = numpy.median(current_dist)
 
 		# McGill et al. (1978)
 		lower_iqr, upper_iqr = numpy.percentile(current_dist, [25, 75])
-		lower_95 = current_median - abs(1.7 * (lower_iqr / math.sqrt(len(current_dist))))
-		lower_95 = float("%.3f" % lower_95)
-		upper_95 = current_median + abs(1.7 * (upper_iqr / math.sqrt(len(current_dist))))
-		upper_95 = float("%.3f" % upper_95)
-		lower_99 = current_median - abs(1.95 * (lower_iqr / math.sqrt(len(current_dist))))
-		lower_99 = float("%.3f" % lower_99)
-		upper_99 = current_median + abs(1.95 * (upper_iqr / math.sqrt(len(current_dist))))
-		upper_99 = float("%.3f" % upper_99)
+		numerator = 1.25 * abs(upper_iqr - lower_iqr)
+		denominator = 1.35 * math.sqrt(len(current_dist))
+		range_factor = numerator / denominator
+		range_95 = 1.6 * range_factor
+		range_99 1.9 * range_factor
+		lower_95 = float("%.3f" % (current_median - range_95))
+		upper_95 = float("%.3f" % (current_median + range_95))
+		lower_99 = float("%.3f" % (current_median - range_99))
+		upper_99 = float("%.3f" % (current_median + range_99))
 
 		interval_lst.append([compound, current_median, lower_95, upper_95, lower_99, upper_99])
 
