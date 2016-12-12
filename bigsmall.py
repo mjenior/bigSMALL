@@ -358,7 +358,7 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	for compound in compound_lst:
 
 		# Get the distribution
-		current_dist = list(distribution_dict[compound])
+		current_dist = list(set(distribution_dict[compound]))
 
 		# Calculate median
 		current_median = numpy.median(current_dist)
