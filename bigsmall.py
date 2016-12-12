@@ -221,6 +221,7 @@ def compile_transcripts(transcript_dictionary, ko_input_dict, ko_output_dict, co
 		input_compounds = ko_input_dict[ko]
 		output_compounds = ko_output_dict[ko]
 		
+		# Add transcription
 		for compound in input_compounds:
 			compound_transcript_dict[compound][0] = compound_transcript_dict[compound][0] + transcription
 			compound_degree_dict[compound][1] = compound_degree_dict[compound][1] + 1
@@ -340,6 +341,18 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	print 'Calculating summary statistics of each importance score distribution...\n'
 	# Compile the scores for each compound and find the median and standard deviation
 	interval_lst = []
+
+
+	# Code for distribution testing purposes (leave commented out)
+	#with open('test_distribution.txt', 'w') as sample_dist_file:
+	#    fructose_dist = list(distribution_dict['C01094'])
+	#    propanoate_dist = list(distribution_dict['C00163'])
+	#    for index in range(0, len(fructose_dist)):
+	#    	fructose_entry = str(fructose_dist[index])
+	#    	propanoate_entry = str(propanoate_dist[index])
+    #		sample_entry = fructose_entry + '\t' + propanoate_entry + '\n'
+    #		sample_dist_file.write(sample_entry)
+
 
 	for compound in compound_lst:
 
