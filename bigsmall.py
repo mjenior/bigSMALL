@@ -342,8 +342,8 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 
 	# Code for distribution testing purposes (uncomment when necessary)
 	#with open('test_distribution.txt', 'w') as sample_dist_file:
-	#    dist1 = list(distribution_dict['C01094']) # fructose 1-phosphate - change as needed
-	#    dist2 = list(distribution_dict['C00163']) # propanoate - change as needed
+	#    dist1 = list(set(distribution_dict['C01094'])) # fructose 1-phosphate - change as needed
+	#    dist2 = list(set(distribution_dict['C00163'])) # propanoate - change as needed
 	#    for index in range(0, len(dist1)):
 	#    	entry1 = str(dist1[index])
 	#    	entry2 = str(dist2[index])
