@@ -338,21 +338,21 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 
 	sys.stdout.write('\rDone.                       \n\n')
 
+
+	# Code for distribution testing purposes (uncomment when necessary)
+	#with open('test_distribution.txt', 'w') as sample_dist_file:
+	#    dist1 = list(distribution_dict['C01094']) # fructose 1-phosphate - change as needed
+	#    dist2 = list(distribution_dict['C00163']) # propanoate - change as needed
+	#    for index in range(0, len(dist1)):
+	#    	entry1 = str(dist1[index])
+	#    	entry2 = str(dist2[index])
+    #		sample_entry = entry1 + '\t' + entry2 + '\n'
+    #		sample_dist_file.write(sample_entry)
+
+
 	print 'Calculating summary statistics of each importance score distribution...\n'
 	# Compile the scores for each compound and find the median and standard deviation
 	interval_lst = []
-
-
-	# Code for distribution testing purposes (leave commented out)
-	#with open('test_distribution.txt', 'w') as sample_dist_file:
-	#    fructose_dist = list(distribution_dict['C01094'])
-	#    propanoate_dist = list(distribution_dict['C00163'])
-	#    for index in range(0, len(fructose_dist)):
-	#    	fructose_entry = str(fructose_dist[index])
-	#    	propanoate_entry = str(propanoate_dist[index])
-    #		sample_entry = fructose_entry + '\t' + propanoate_entry + '\n'
-    #		sample_dist_file.write(sample_entry)
-
 
 	for compound in compound_lst:
 
@@ -374,7 +374,7 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		lower_99 = float("%.3f" % (current_median - range_99))
 		upper_99 = float("%.3f" % (current_median + range_99))
 
-		interval_lst.append([compound, current_median, lower_95, upper_95, lower_99, upper_99])
+		interval_lst.append([compound, lower_99, lower_95, current_median, upper_95, upper_99])
 
 	print 'Done.\n'
 	return interval_lst
@@ -394,33 +394,28 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		current_outdegree = degree_dict[current_compound][2]
 		current_score = float(score_dict[current_compound][1])
 		
-		current_simmedian = float(index[1])
 		current_simlower_95conf = float(index[2])
-		current_simupper_95conf = float(index[3])
-		current_simlower_99conf = float(index[4])
+		current_simupper_95conf = float(index[4])
+		current_simlower_99conf = float(index[1])
 		current_simupper_99conf = float(index[5])
 		
-		if current_score > current_simmedian:
-			if current_score > current_simupper_95conf:
-				if current_score > current_simupper_99conf:
-					current_sig = '<0.01'
-					sig_count += 1
-				else:
-					current_sig = '<0.05'
-					sig_count += 1
+		if current_score > current_simupper_95conf:
+			if current_score > current_simupper_99conf:
+				current_sig = '<0.01'
+				sig_count += 1
 			else:
-				current_sig = 'n.s.'
+				current_sig = '<0.05'
+				sig_count += 1
 		
-		elif current_score < current_simmedian:
-			if current_score < current_simlower_95conf:
-				if current_score < current_simlower_99conf:
-					current_sig = '<0.01'
-					sig_count += 1
-				else:
-					current_sig = '<0.05'
-					sig_count += 1
+		elif current_score < current_simlower_95conf:
+			if current_score < current_simlower_99conf:
+				current_sig = '<0.01'
+				sig_count += 1
 			else:
-				current_sig = 'n.s.'
+				current_sig = '<0.05'
+				sig_count += 1
+		else:
+			current_sig = 'n.s.'
 
 		labeled_confidence.append([current_compound, current_name, current_score, current_sig])	
 
@@ -603,6 +598,8 @@ if iterations >= 1:
 	print 'Writing score data with probability distributions to a file...\n'
 	outname = 'importances.tsv'
 	write_list('Compound_code\tCompound_name\tMetabolite_score\tp_value\n', final_data, outname)
+	outname = 'confidence_intervals.tsv'
+	write_list('Compound_code\tLower_99_Interval\tLower_95_Interval\tSim_Median\tUpper_95_Interval\tUpper_99_Interval\n', interval_lst, outname)
 	print 'Done.\n'
 
 # If simulation not performed, write only scores calculated from measured expression to files	
