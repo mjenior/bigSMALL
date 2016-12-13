@@ -341,14 +341,14 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 
 
 	# Code for distribution testing purposes (uncomment when necessary)
-	#with open('test_distribution.txt', 'w') as sample_dist_file:
-	#    dist1 = list(set(distribution_dict['C00794'])) # D-Sorbitol - change as needed
-	#    dist2 = list(set(distribution_dict['C00049'])) # L-Aspartate - change as needed
-	#    for index in range(0, len(dist1)):
-	#		entry1 = str(dist1[index])
-	#		entry2 = str(dist2[index])
-	#		sample_entry = entry1 + '\t' + entry2 + '\n'
-	#		sample_dist_file.write(sample_entry)
+	with open('test_distribution.txt', 'w') as sample_dist_file:
+	    dist1 = list(distribution_dict['C00369']) # Starch - change as needed
+	    dist2 = list(distribution_dict['C00118']) # D-Glyceraldehyde_3-phosphate - change as needed
+	    for index in range(0, len(dist1)):
+			entry1 = str(dist1[index])
+			entry2 = str(dist2[index])
+			sample_entry = entry1 + '\t' + entry2 + '\n'
+			sample_dist_file.write(sample_entry)
 
 
 	print 'Calculating summary statistics of each importance score distribution...\n'
