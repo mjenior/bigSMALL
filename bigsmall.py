@@ -425,7 +425,7 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		else:
 			current_sig = 'n.s.'
 
-		labeled_confidence.append([current_compound, current_name, current_score, current_relationship, current_sig])	
+		labeled_confidence.append([current_compound, current_name, current_score, current_sig])	
 
 	print('Detected ' + str(sig_count) + ' significant of ' + str(len(interval_lst)) + ' total metabolites.\n')
 
