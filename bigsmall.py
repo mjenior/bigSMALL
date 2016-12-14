@@ -395,11 +395,19 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		current_outdegree = degree_dict[current_compound][2]
 		current_score = float(score_dict[current_compound][1])
 		
+		current_median = float(index[3])
 		current_simlower_95conf = float(index[2])
 		current_simupper_95conf = float(index[4])
 		current_simlower_99conf = float(index[1])
 		current_simupper_99conf = float(index[5])
 		
+		if current_score > current_median:
+			current_relationship = 'above'
+		elif current_score < current_median:
+			current_relationship = 'below'
+		else:
+			current_relationship = 'none'
+
 		if current_score > current_simupper_95conf:
 			if current_score > current_simupper_99conf:
 				current_sig = '<0.01'
@@ -407,7 +415,6 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 			else:
 				current_sig = '<0.05'
 				sig_count += 1
-		
 		elif current_score < current_simlower_95conf:
 			if current_score < current_simlower_99conf:
 				current_sig = '<0.01'
@@ -418,7 +425,7 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		else:
 			current_sig = 'n.s.'
 
-		labeled_confidence.append([current_compound, current_name, current_score, current_sig])	
+		labeled_confidence.append([current_compound, current_name, current_score, current_relationship, current_sig])	
 
 	print('Detected ' + str(sig_count) + ' significant of ' + str(len(interval_lst)) + ' total metabolites.\n')
 
