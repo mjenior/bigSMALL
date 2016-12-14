@@ -623,11 +623,11 @@ else:
 	write_dictionary_short('Compound_code\tCompound_name\tMetabolite_score\n', score_dict, outname)
 	print 'Done.\n'
 
-print 'Writing network topology and original transcipt counts to files...\n'
+print 'Writing network topology and transcipt counts to files...\n'
 outname = 'topology.tsv'
 write_dictionary('Compound_code\tCompound_name\tIndegree\tOutdegree\n', degree_dict, outname)
-#outname = 'mapping.tsv'
-#write_dictionary_short('KO_code\tTranscripts\n', transcript_dict, outname)
+outname = 'KO_mapping.tsv'
+write_dictionary_short('KO_code\tTranscripts\n', transcript_dict, outname)
 outname = 'input_metabolites.tsv'
 write_dictionary_list('KO_code\tCompound_codes\n', ko_input_dict, outname)
 outname = 'output_metabolites.tsv'
