@@ -611,7 +611,7 @@ if iterations >= 1:
 	# Write all the calculated data to files
 	print 'Writing score data with probability distributions to a file...\n'
 	outname = 'importances.tsv'
-	write_list('Compound_code\tCompound_name\tMetabolite_score\tp_value\n', final_data, outname)
+	write_list('Compound_code\tMetabolite_name\tImportance_score\tp_value\n', final_data, outname)
 	outname = 'confidence_intervals.tsv'
 	write_list('Compound_code\tLower_99_Interval\tLower_95_Interval\tSim_Median\tUpper_95_Interval\tUpper_99_Interval\n', interval_lst, outname)
 	print 'Done.\n'
@@ -620,12 +620,12 @@ if iterations >= 1:
 else:
 	print 'Writing score data to a file...\n' 
 	outname = 'importances.tsv'
-	write_dictionary_short('Compound_code\tCompound_name\tMetabolite_score\n', score_dict, outname)
+	write_dictionary_short('Compound_code\tMetabolite_name\tImportance_score\n', score_dict, outname)
 	print 'Done.\n'
 
 print 'Writing network topology and transcipt counts to files...\n'
 outname = 'topology.tsv'
-write_dictionary('Compound_code\tCompound_name\tIndegree\tOutdegree\n', degree_dict, outname)
+write_dictionary('Compound_code\tMetabolite_name\tIndegree\tOutdegree\n', degree_dict, outname)
 outname = 'KO_mapping.tsv'
 write_dictionary_short('KO_code\tTranscripts\n', transcript_dict, outname)
 outname = 'input_metabolites.tsv'
