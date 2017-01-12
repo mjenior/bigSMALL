@@ -38,6 +38,8 @@ import random
 import numpy
 import time
 import datetime
+import scipy
+import scipy.stats
 
 #---------------------------------------------------------------------------------------#		
 
@@ -79,7 +81,17 @@ file_name = file_name.replace(' ', '_')
 	
 #---------------------------------------------------------------------------------------#			
 
-# Define all the functions!
+# Define the functions
+
+# Calculates mean and confidence intervals at the desired level for a given distribution
+def calc_confidence(raw_distribution, confidence):
+    raw_array = 1.0 * numpy.array(raw_distribution)
+    array_length = len(raw_array)
+    array_mean = numpy.mean(raw_array), 
+    array_standarderror = scipy.stats.sem(raw_array)
+    array_confidence = array_standarderror * scipy.stats.t._ppf((1 + confidence) / 2., array_length - 1)
+    return array_mean, array_mean - array_confidence, array_mean + array_confidence
+
 
 # Create a dictionary for transcript value associated with its KO
 def transcription_dictionary(KO_file):
@@ -358,24 +370,30 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	for compound in compound_lst:
 
 		# Get the distribution
-		current_dist = list(set(distribution_dict[compound]))
+		raw_dist = list(distribution_dict[compound])
 
-		# Calculate median
-		current_median = numpy.median(current_dist)
+		# Calculate summary statistics
+		current_mean, lower_95, upper_95 = calc_confidence(raw_dist, 0.95)
+		current_mean, lower_99, upper_99 = calc_confidence(raw_dist, 0.99)
 
+
+		# In the future, integrate Gaussian finite mixture models here...probably never :(
+
+
+		# Outdated code, too generous with confidence intervals for very large distributions (n ~= 10000)
 		# McGill et al. (1978). Variations of Box Plots. The American Statistician, 32:1, 12-16.
-		lower_iqr, upper_iqr = numpy.percentile(current_dist, [25, 75])
-		numerator = 1.25 * abs(upper_iqr - lower_iqr)
-		denominator = 1.35 * math.sqrt(len(current_dist))
-		range_factor = numerator / denominator
-		range_95 = 1.6 * range_factor
-		range_99 = 1.9 * range_factor
-		lower_95 = float("%.3f" % (current_median - range_95))
-		upper_95 = float("%.3f" % (current_median + range_95))
-		lower_99 = float("%.3f" % (current_median - range_99))
-		upper_99 = float("%.3f" % (current_median + range_99))
+		#lower_iqr, upper_iqr = numpy.percentile(current_dist, [25, 75])
+		#numerator = 1.25 * abs(upper_iqr - lower_iqr)
+		#denominator = 1.35 * math.sqrt(len(current_dist))
+		#range_factor = numerator / denominator
+		#range_95 = 1.6 * range_factor
+		#range_99 = 1.9 * range_factor
+		#lower_95 = float("%.3f" % (current_median - range_95))
+		#upper_95 = float("%.3f" % (current_median + range_95))
+		#lower_99 = float("%.3f" % (current_median - range_99))
+		#upper_99 = float("%.3f" % (current_median + range_99))
 
-		interval_lst.append([compound, lower_99, lower_95, current_median, upper_95, upper_99])
+		interval_lst.append([compound, lower_99, lower_95, current_mean, upper_95, upper_99])
 
 	print 'Done.\n'
 	return interval_lst
@@ -516,7 +534,7 @@ def write_dictionary_list(header, out_dict, file_name):
 
 
 # Citation text
-print '''\nbigSMALL v1.0
+print '''\nbigSMALL v1.1
 Released: 12/01/2016
 
 by
@@ -596,7 +614,7 @@ write_list('none', reaction_graph, 'graph.tsv')
 #---------------------------------------------------------------------------------------#	
 
 # Calculate actual importance scores for each compound in the network
-print 'Calculating compound node connectedness and metabolite scores...\n'
+print 'Calculating metabolite connectedness and importance scores...\n'
 compound_transcript_dict, compound_degree_dict = compile_transcripts(transcript_dict, ko_input_dict, ko_output_dict, compound_lst, KO_lst)
 score_dict, degree_dict = calculate_score(compound_transcript_dict, compound_degree_dict, compound_name_dictionary, compound_lst)
 print 'Done.\n'
@@ -609,16 +627,16 @@ if iterations >= 1:
 	final_data = confidence_interval(score_dict, interval_lst, degree_dict)
 
 	# Write all the calculated data to files
-	print 'Writing score data with probability distributions to a file...\n'
+	print 'Writing importance scores and significance to output file...\n'
 	outname = 'importances.tsv'
 	write_list('Compound_code\tMetabolite_name\tImportance_score\tp_value\n', final_data, outname)
 	outname = 'confidence_intervals.tsv'
-	write_list('Compound_code\tLower_99_Interval\tLower_95_Interval\tSim_Median\tUpper_95_Interval\tUpper_99_Interval\n', interval_lst, outname)
+	write_list('Compound_code\tLower_99_CI\tLower_95_CI\tSim_Mean\tUpper_95_CI\tUpper_99_CI\n', interval_lst, outname)
 	print 'Done.\n'
 
 # If simulation not performed, write only scores calculated from measured expression to files	
 else:
-	print 'Writing score data to a file...\n' 
+	print 'Writing importance scores to output file...\n' 
 	outname = 'importances.tsv'
 	write_dictionary_short('Compound_code\tMetabolite_name\tImportance_score\n', score_dict, outname)
 	print 'Done.\n'
