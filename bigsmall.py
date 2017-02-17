@@ -370,28 +370,18 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	for compound in compound_lst:
 
 		# Get the distribution
-		raw_dist = list(distribution_dict[compound])
+		current_dist = list(distribution_dict[compound])
 
-		# Calculate summary statistics
-		current_mean, lower_95, upper_95 = calc_confidence(raw_dist, 0.95)
-		current_mean, lower_99, upper_99 = calc_confidence(raw_dist, 0.99)
-
-
-		# In the future, integrate Gaussian finite mixture models here...probably never :(
-
-
-		# Outdated code, too generous with confidence intervals for very large distributions (n ~= 10000)
 		# McGill et al. (1978). Variations of Box Plots. The American Statistician, 32:1, 12-16.
-		#lower_iqr, upper_iqr = numpy.percentile(current_dist, [25, 75])
-		#numerator = 1.25 * abs(upper_iqr - lower_iqr)
-		#denominator = 1.35 * math.sqrt(len(current_dist))
-		#range_factor = numerator / denominator
-		#range_95 = 1.6 * range_factor
-		#range_99 = 1.9 * range_factor
-		#lower_95 = float("%.3f" % (current_median - range_95))
-		#upper_95 = float("%.3f" % (current_median + range_95))
-		#lower_99 = float("%.3f" % (current_median - range_99))
-		#upper_99 = float("%.3f" % (current_median + range_99))
+		lower_iqr, current_median, upper_iqr = numpy.percentile(current_dist, [25, 50, 75])
+		numerator = upper_iqr - lower_iqr
+		denominator = math.sqrt(len(current_dist))
+		range_95 = 1.57 * (numerator / denominator)
+		range_99 = 1.8 * (numerator / denominator)
+		lower_95 = float("%.3f" % (current_median - range_95))
+		upper_95 = float("%.3f" % (current_median + range_95))
+		lower_99 = float("%.3f" % (current_median - range_99))
+		upper_99 = float("%.3f" % (current_median + range_99))
 
 		interval_lst.append([compound, lower_99, lower_95, current_mean, upper_95, upper_99])
 
