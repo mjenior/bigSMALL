@@ -372,18 +372,20 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		# Get the distribution
 		current_dist = list(distribution_dict[compound])
 
-		# McGill et al. (1978). Variations of Box Plots. The American Statistician, 32:1, 12-16.
-		lower_iqr, current_median, upper_iqr = numpy.percentile(current_dist, [25, 50, 75])
-		numerator = upper_iqr - lower_iqr
-		denominator = math.sqrt(len(current_dist))
-		range_95 = 1.57 * (numerator / denominator)
-		range_99 = 1.8 * (numerator / denominator)
-		lower_95 = float("%.3f" % (current_median - range_95))
-		upper_95 = float("%.3f" % (current_median + range_95))
-		lower_99 = float("%.3f" % (current_median - range_99))
-		upper_99 = float("%.3f" % (current_median + range_99))
+		# Conover, W.J. (1980) Practical Nonparametric Statistics John Wiley and Sons, New York. 
 
-		interval_lst.append([compound, lower_99, lower_95, current_mean, upper_95, upper_99])
+		current_median = numpy.median(current_dist)
+		current_dist = sorted(list(set(current_dist)))
+		n = len(current_dist)
+		q = 0.5
+		nq = n * q
+		current_range = 1.96 * math.sqrt(n * q * (1 - q))
+		j = math.ceil(nq - current_range) - 1
+		k = math.ceil(nq + current_range) - 1
+		lower_95 = current_dist[j]
+		upper_95 = current_dist[k]
+
+		interval_lst.append([compound, lower_95, current_median, upper_95])
 
 	print 'Done.\n'
 	return interval_lst
@@ -403,11 +405,9 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 		current_outdegree = degree_dict[current_compound][2]
 		current_score = float(score_dict[current_compound][1])
 		
-		current_median = float(index[3])
-		current_simlower_95conf = float(index[2])
-		current_simupper_95conf = float(index[4])
-		current_simlower_99conf = float(index[1])
-		current_simupper_99conf = float(index[5])
+		current_median = float(index[2])
+		current_simlower_95conf = float(index[1])
+		current_simupper_95conf = float(index[3])
 		
 		if current_score > current_median:
 			current_relationship = 'above'
@@ -417,19 +417,11 @@ def confidence_interval(score_dict, interval_lst, degree_dict):
 			current_relationship = 'none'
 
 		if current_score > current_simupper_95conf:
-			if current_score > current_simupper_99conf:
-				current_sig = '<0.01'
-				sig_count += 1
-			else:
-				current_sig = '<0.05'
-				sig_count += 1
+			current_sig = '<0.05'
+			sig_count += 1
 		elif current_score < current_simlower_95conf:
-			if current_score < current_simlower_99conf:
-				current_sig = '<0.01'
-				sig_count += 1
-			else:
-				current_sig = '<0.05'
-				sig_count += 1
+			current_sig = '<0.05'
+			sig_count += 1
 		else:
 			current_sig = 'n.s.'
 
