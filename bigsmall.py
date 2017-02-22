@@ -276,12 +276,13 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 		
 		score_difference = input_score - output_score
 
-		if score_difference < 1 and score_difference > -1:
+		# Log transform final scores
+		if score_difference == 0:
 			final_score = 0.0
-		elif score_difference <= -1:
-			final_score = math.log(abs(score_difference), 2) * -1
+		elif score_difference < 0:
+			final_score = math.log(abs(score_difference - 1), 2) * -1
 		else:
-			final_score = math.log(score_difference, 2)
+			final_score = math.log((score_difference + 1), 2)
 
 		final_score = float("%.3f" % final_score)
 
