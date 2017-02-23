@@ -2,10 +2,10 @@
 '''USAGE: bigsmall.py KO_expressionfile --name organism_name --iters 1000
 The function of this script is to convert lists of genes to unweighted, 
 directed graphs and compute importance of each compound to metabolism 
-based on the expression of surrounding enzyme nodes.
+based on the expression of adjacent enzyme nodes.
 '''
 
-# Written by Matthew Jenior, University of Michigan, Schloss Laboratory, 2016
+# Written by Matthew Jenior, University of Michigan, Schloss Laboratory, 2016-2017
 
 # Dependencies:  
 # The script itself needs to be run from from a directory containing the /support/ sub-directory
@@ -352,18 +352,6 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 
 	sys.stdout.write('\rDone.                       \n\n')
 
-
-	# Code for distribution testing purposes (uncomment when necessary)
-	#with open('test_distribution.txt', 'w') as sample_dist_file:
-	#    dist1 = list(distribution_dict['C00369']) # Starch - change as needed
-	#    dist2 = list(distribution_dict['C00118']) # D-Glyceraldehyde_3-phosphate - change as needed
-	#    for index in range(0, len(dist1)):
-	#		entry1 = str(dist1[index])
-	#		entry2 = str(dist2[index])
-	#		sample_entry = entry1 + '\t' + entry2 + '\n'
-	#		sample_dist_file.write(sample_entry)
-
-
 	print 'Calculating summary statistics of each importance score distribution...\n'
 	# Compile the scores for each compound and find the median and standard deviation
 	interval_lst = []
@@ -373,8 +361,8 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		# Get the distribution
 		current_dist = list(distribution_dict[compound])
 
-		# Conover, W.J. (1980) Practical Nonparametric Statistics John Wiley and Sons, New York. 
-
+		# Bonett DG & Price RM. (2002). Statistical inference for a linear function of medians: confidence intervals, 
+		#	hypothesis testing, and sample size requirements. Psychol Methods. 7(3):370-83.
 		current_median = numpy.median(current_dist)
 		current_dist = sorted(list(set(current_dist)))
 		n = len(current_dist)
@@ -465,7 +453,7 @@ def write_list_short(header, out_lst, file_name):
 # Function to write dictionaries to files (next 2 functions are similar)	
 def write_dictionary(header, out_dict, file_name):
 
-	all_keys = out_dict.keys()
+	all_keys = list(set(out_dict.keys()))
 	
 	with open(file_name, 'w') as out_file: 
 		
@@ -482,7 +470,7 @@ def write_dictionary(header, out_dict, file_name):
 
 def write_dictionary_short(header, out_dict, file_name):
 
-	all_keys = out_dict.keys()
+	all_keys = list(set(out_dict.keys()))
 	
 	with open(file_name, 'w') as out_file: 
 		
@@ -496,7 +484,7 @@ def write_dictionary_short(header, out_dict, file_name):
 
 def write_dictionary_list(header, out_dict, file_name):
 
-	all_keys = out_dict.keys()
+	all_keys = list(set(out_dict.keys()))
 	
 	with open(file_name, 'w') as out_file: 
 		
@@ -517,7 +505,7 @@ def write_dictionary_list(header, out_dict, file_name):
 
 
 # Citation text
-print '''\nbigSMALL v1.1
+print '''\nbigSMALL v1.2
 Released: 12/01/2016
 
 by
@@ -528,7 +516,9 @@ University of Michigan
 mljenior@umich.edu
 
 When using, please cite:
-Jenior, M.L., Leslie, J.L., Young, V.B., Schloss, P.D. (2016). Clostridium difficile colonizes alternative nutrient niches during infection across distinct murine gut environments. Biorxiv preprint: http://biorxiv.org/content/early/2016/12/07/092304
+Jenior ML, Leslie JL, Young VB, & Schloss PD. (2017). Clostridium difficile colonizes alternative 
+	nutrient niches during infection across distinct murine gut communities. 
+	Biorxiv preprint: http://biorxiv.org/content/early/2016/12/07/092304
 
 Distributed under the GNU General Public License\n\n'''
 
