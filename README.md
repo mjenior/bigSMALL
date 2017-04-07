@@ -3,10 +3,12 @@ bigsmall or *B*acter*I*al *G*enome-*S*cale *M*etabolic models for *A*pp*L*ied re
 
 
 bigSMALL v1.3
+
 Released: 12/1/2016
+
 Updated: 4/7/2017
 
-by
+by: 
 Matthew L. Jenior
 
 Department of Microbiology & Immunology
