@@ -2,8 +2,9 @@ bigsmall or *B*acter*I*al *G*enome-*S*cale *M*etabolic models for *A*pp*L*ied re
 ============
 
 
-bigSMALL v1.0
-Released: 12/01/2016
+bigSMALL v1.3
+Released: 12/1/2016
+Updated: 4/7/2017
 
 by
 Matthew L. Jenior
@@ -13,7 +14,7 @@ University of Michigan
 mljenior@umich.edu
 
 When using, please cite:
-Jenior, M.L., Leslie, J.L., Young, V.B., Schloss, P.D. (2016). Clostridium difficile colonizes alternative nutrient niches during infection across distinct murine gut environments. Biorxiv preprint: http://biorxiv.org/content/early/2016/12/07/092304
+Jenior, M.L., Leslie, J.L., Young, V.B., Schloss, P.D. (2017). Clostridium difficile colonizes alternative nutrient niches during infection across distinct murine gut communities. Biorxiv preprint: http://biorxiv.org/content/early/2016/12/07/092304
 
 Distributed under the GNU General Public License
 

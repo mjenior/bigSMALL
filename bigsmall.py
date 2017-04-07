@@ -504,7 +504,8 @@ def write_dictionary_list(header, out_dict, file_name):
 
 # Citation text
 print '''\nbigSMALL v1.3
-Released: 12/01/2016
+Released: 12/1/2016
+Updated: 4/7/2017
 
 by
 Matthew L. Jenior
