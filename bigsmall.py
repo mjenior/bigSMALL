@@ -305,20 +305,19 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	progress = 0.0
 	sys.stdout.write('\rProgress: ' + str(progress) + '%')
 	sys.stdout.flush() 
-	all_distributions = set()
+	all_distributions = []
 	for index in range(iterations):
 
 		# Generate bootstrapped transcript distributions
 		transcript_distribution = random.sample(transcript_distribution, len(kos))
 
 		if not tuple(transcript_distribution) in all_distributions:
-			all_distributions.add(tuple(transcript_distribution))
+			all_distributions.append(tuple(transcript_distribution))
 			progress += increment
 			progress = float("%.3f" % progress)
 			sys.stdout.write('\rProgress: ' + str(progress) + '%')
 			sys.stdout.flush() 
 
-	all_distributions = list(all_distributions)
 	sys.stdout.write('\rDone.                       \n\n')
 	
 	distribution_dict = {}
@@ -359,18 +358,17 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	for compound in compound_lst:
 
 		# Get the distribution
-		current_dist = list(distribution_dict[compound])
+		current_dist = sorted(list(distribution_dict[compound]))
+		current_median = numpy.median(current_dist)
 
 		# Bonett DG & Price RM. (2002). Statistical inference for a linear function of medians: confidence intervals, 
 		#	hypothesis testing, and sample size requirements. Psychol Methods. 7(3):370-83.
-		current_median = numpy.median(current_dist)
-		current_dist = sorted(list(set(current_dist)))
 		n = len(current_dist)
 		q = 0.5
 		nq = n * q
-		current_range = 1.96 * math.sqrt(n * q * (1 - q))
-		j = math.ceil(nq - current_range) - 1
-		k = math.ceil(nq + current_range) - 1
+		current_range = 20 * math.sqrt(n * q * (1 - q)) # Needed to make a much more strict cutoff due to the random nature of the distributions (Bonett used 1.96 instead of 20)
+		j = int(math.ceil(nq - current_range) - 1)
+		k = int(math.ceil(nq + current_range) - 1)
 		lower_95 = current_dist[j]
 		upper_95 = current_dist[k]
 
@@ -505,7 +503,7 @@ def write_dictionary_list(header, out_dict, file_name):
 
 
 # Citation text
-print '''\nbigSMALL v1.2
+print '''\nbigSMALL v1.3
 Released: 12/01/2016
 
 by
