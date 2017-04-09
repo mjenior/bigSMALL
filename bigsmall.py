@@ -364,9 +364,11 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		# Bonett DG & Price RM. (2002). Statistical inference for a linear function of medians: confidence intervals, 
 		#	hypothesis testing, and sample size requirements. Psychol Methods. 7(3):370-83.
 		n = len(current_dist)
+		m = n * 0.05
 		q = 0.5
 		nq = n * q
 		current_range = 20 * math.sqrt(n * q * (1 - q)) # Needed to make a much more strict cutoff due to the random nature of the distributions (Bonett used 1.96 instead of 20)
+		#current_range = m * math.sqrt(n * q * (1 - q))
 		j = int(math.ceil(nq - current_range) - 1)
 		k = int(math.ceil(nq + current_range) - 1)
 		lower_95 = current_dist[j]
