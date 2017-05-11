@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-'''USAGE: python python multicomm.py interaction.files --p n.s.
+'''USAGE: python python multimib.py interaction.files --p n.s. --abund TRUE
+MULTi-level Inference of Metabolic Interaction of Bigsmall-derived importance values
 Calculates putative community-level and pair-wise metabolic interations between species from aggregated bigSMALL analysis
-MULTI-level comparison of metabolite importance for inferring niche overlap and COMMunity assembly rules
 '''
 
 # Initialize all modules, functions, and compound dictionary
