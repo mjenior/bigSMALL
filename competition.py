@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-'''USAGE: python python multimib.py interaction.files --p n.s. --abund TRUE
-MULTi-level Inference of Metabolic Interaction of Bigsmall-derived importance values
+'''USAGE: python python competition.py interaction.files --p n.s. --abund TRUE
+Multi-level inference of substrate competition between transcriptome-informed genome-scale models
 Calculates putative community-level and pair-wise metabolic interations between species from aggregated bigSMALL analysis
 '''
 
@@ -23,11 +23,13 @@ starting_directory = str(os.getcwd())
 # Set up arguments
 parser = argparse.ArgumentParser(description='Calculate metabolic pair-wise interactions of species from the output of bigSMALL.')
 parser.add_argument('input_file')
-parser.add_argument('--p_max', default='n.s.', help='Minimum p-value for metabolites to be considered in calculations')
+parser.add_argument('--p', default='n.s.', help='Minimum p-value for metabolites to be considered in calculations')
+parser.add_argument('--str', default=0, help='Minimum strength of imputed nutrient competition which to report')
 
 args = parser.parse_args()
 interactions = args.input_file
-p_value = args.p_max
+p_value = args.p
+strength = args.str
 
 if os.stat(interactions).st_size == 0 : sys.exit('WARNING: Input file empty, quitting')
 if p_value != 'n.s.' and p_value < 0.0: sys.exit('WARNING: Invalid p-value cutoff, quitting')
@@ -78,8 +80,8 @@ def read_scores(importance_scores, p_cutoff):
 		compound_name = str(line[1])
 		
 		score = float(line[2])
-		if score < 0.0:
-			score = -(2 ^ -score)
+		if score =< 0.0:
+			continue
 		else:
 			score = 2 ^ score
 		
@@ -101,7 +103,7 @@ def read_scores(importance_scores, p_cutoff):
 
 
 # Function for calculating edges of metabolic competition
-def single_interaction(score_dict_1, score_dict_2):
+def single_interaction(score_dict_1, score_dict_2, min_strength):
 	
 	all_compounds = list(set(score_dict_1.keys() + score_dict_2.keys()))
 	
@@ -119,36 +121,35 @@ def single_interaction(score_dict_1, score_dict_2):
 		except keyError:
 			continue
 
-		# Determine type of interaction
-		if score_1 > 0.0 and score_2 < 0.0:
-			relationship = 'synergy'
-		elif score_1 < 0.0 and score_2 > 0.0:
-			relationship = 'synergy'
-		elif score_1 > 0.0 and score_2 > 0.0:
-			relationship = 'competition'
-		else:
-			relationship = 'none'
+		# Determine strength of competition
+		magnitude = score_1 + score_2
+		difference = abs(score_1 - score_2)
 
-		# Report size of difference (arbitrary)
-		magnitude = abs(score_1 - score_2)
-		if relationship == 'synergy':
-			if magnitude >= 100:
-				strength = 'strong'
-			elif magnitude >= 50:
+		if magnitude > 500:
+			if difference <= 50:
+				strength = 'very strong'
+			elif difference <= 175:
+				strength = 'strong'	
+			elif difference <= 300:
 				strength = 'moderate'
 			else:
 				strength = 'weak'
-		elif relationship == 'competition':
-			if magnitude <= 50:
+		elif magnitude >= 250:
+			if difference <= 70:
 				strength = 'strong'
-			elif magnitude <= 100:
+			if difference <= 150:
+				strength = 'moderate'
+			else:
+				strength = 'weak'
+		elif magnitude >= 125:
+			if difference <= 90:
 				strength = 'moderate'
 			else:
 				strength = 'weak'
 		else:
 			strength = 'none'
 
-		interaction_dictionary[index] = [name, score_1, score_2, magnitude, relationship, strength]
+		interaction_dictionary[index] = [name, score_1, score_2, magnitude, difference, strength]
 
 	return interaction_dictionary
 
