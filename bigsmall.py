@@ -224,6 +224,7 @@ def compile_transcripts(transcript_dictionary, ko_input_dict, ko_output_dict, co
 	compound_transcript_dict = {}
 	compound_degree_dict = {}
 	for compound in compound_lst:
+		if compound[0] != 'C': continue
 		compound_transcript_dict[compound] = [0, 0] # [input, output]
 		compound_degree_dict[compound] = [0, 0] # [indegree, outdegree]
 		
@@ -236,10 +237,12 @@ def compile_transcripts(transcript_dictionary, ko_input_dict, ko_output_dict, co
 		
 		# Add transcription
 		for compound in input_compounds:
+			if compound[0] != 'C': continue
 			compound_transcript_dict[compound][0] = compound_transcript_dict[compound][0] + transcription
 			compound_degree_dict[compound][1] = compound_degree_dict[compound][1] + 1
 		
 		for compound in output_compounds:
+			if compound[0] != 'C': continue
 			compound_transcript_dict[compound][1] = compound_transcript_dict[compound][1] + transcription
 			compound_degree_dict[compound][0] = compound_degree_dict[compound][0] + 1
 	
@@ -254,7 +257,8 @@ def calculate_score(compound_transcript_dict, compound_degree_dict, compound_nam
 		
 	# Calculate metabolite scores integrating input and output reactions weightings
 	for compound in compound_lst:
-	
+		if compound[0] != 'C': continue
+
 		score_dict[compound] = []
 		degree_dict[compound] = []
 		
@@ -322,6 +326,7 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	
 	distribution_dict = {}
 	for compound in compound_lst:
+		if compound[0] != 'C': continue
 		distribution_dict[compound] = []
 
 	# Memory intensive
@@ -342,6 +347,7 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 		
 		# Make dictionaries of scores for each compound for each direction
 		for compound in compound_lst:
+			if compound[0] != 'C': continue
 			distribution_dict[compound].append(score_dict[compound][1])
 
 		progress += increment
@@ -358,6 +364,7 @@ def probability_distribution(ko_input_dict, ko_output_dict, degree_dict, kos, co
 	m = len(compound_lst) * 0.033 # Calculate foactor to expand confidence interval by
 	 # Needed to make a much more strict cutoff due to the random nature of the distributions
 	for compound in compound_lst:
+		if compound[0] != 'C': continue
 
 		# Get the distribution
 		current_dist = sorted(list(distribution_dict[compound]))
