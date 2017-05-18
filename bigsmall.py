@@ -512,9 +512,9 @@ def write_dictionary_list(header, out_dict, file_name):
 
 
 # Citation text
-print '''\nbigSMALL v1.3
+print '''\nbigSMALL v1.4
 Released: 12/1/2016
-Updated: 4/7/2017
+Updated: 5/17/2017
 
 by
 Matthew L. Jenior
