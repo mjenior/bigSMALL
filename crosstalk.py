@@ -279,7 +279,7 @@ for index in interactions_list:
 	os.chdir(starting_directory)
 
 	current += 1
-	print('Calculating interaction ' + str(current) + ' of ' + str(len(interactions_list)) + '.')
+	print('Calculating metabolic crosstalk: ' + str(current) + ' of ' + str(len(interactions_list)) + '.')
 	interaction = single_interaction(scores_1, scores_2)
 	interaction = calc_percentile(interaction, 5)
 
