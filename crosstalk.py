@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 '''USAGE: python crosstalk.py interaction.files --p n.s. --norm n
 Multi-level inference of substrate competition and cooperation between transcriptome-informed genome-scale models
-Calculates putative community-level and pair-wise metabolic interations between species from aggregated bigSMALL analysis
+Calculates putative community-level and pair-wise metabolic interactions between species from aggregated bigSMALL analysis
 '''
 
 # Initialize all modules, functions, and compound dictionary
@@ -33,7 +33,7 @@ normalize = args.norm
 
 if os.stat(interactions).st_size == 0 : sys.exit('WARNING: Input file empty, quitting')
 if p_value != 'n.s.' and p_value < 0.0: sys.exit('WARNING: Invalid p-value cutoff, quitting')
-if normalize != 'n' or normalize != 'y': sys.exit('WARNING: Invalid normalization response, quitting')
+if normalize != 'n' and normalize != 'y': sys.exit('WARNING: Invalid normalization response, quitting')
 
 print('\n')
 
@@ -44,27 +44,23 @@ print('\n')
 # Function to read in all species cominations from interaction file
 def read_files(files):
 
-	with open(files, 'r'):
+	community = []
+	for line in files:
+		species = line.strip()
+		if os.path.exists(species) == False:
+			print('WARNING: ' + species + ' does not exist. Omitting combination.')
+			continue
+		community.append(species)
 
-		interactions = []
-		community = []
-
-		for line in files:
-			line = line = split()
-
-			species1 = line[0]
-			species2 = line[1]
-
-			if os.path.exists(species1) == False:
-				print('WARNING: ' + species1 + ' does not exist. Omitting combination.')
+	interactions = []
+	for index1 in community:
+		for index2 in community:
+			if index1 == index2:
 				continue
-			elif os.path.exists(species2) == False:
-				print('WARNING: ' + species2 + ' does not exist. Omitting combination.')
-				continue
+			else:
+				interactions.append([index1, index2])
 
-			interactions.append([species1, species2])
-
-	return list(set(interactions))
+	return interactions
 
 
 # Reads importance files, applying p-value filter, normalizes score to reads, and generates a dictionary for compound names and compound scores
@@ -95,14 +91,14 @@ def read_scores(importance_scores, p_cutoff, norm):
 	if norm == 'y':
 		final_score_dictionary = {}
 		score_sum = sum([abs(x) for x in score_dictionary.values()])
-		for index in score_dictionary.keys()
+		for index in score_dictionary.keys():
 			final_score = score_dictionary[index] / score_sum
-			final_score_dictionary[index] = [compound_name, final_score]
+			final_score_dictionary[index] = [name_dictionary[index], final_score]
 	else:
 		final_score_dictionary = {}
-		for index in score_dictionary.keys()
-			final_score_dictionary[index] = [compound_name, score_dictionary[index]]
-
+		for index in score_dictionary.keys():
+			final_score_dictionary[index] = [name_dictionary[index], score_dictionary[index]]
+	
 	return final_score_dictionary
 
 
@@ -118,25 +114,25 @@ def single_interaction(score_dict_1, score_dict_2):
 		try:
 			score_1 = float(score_dict_1[index][1])
 			name = str(score_dict_1[index][0])
-		except keyError:
+		except KeyError:
 			continue
 		try:
 			score_2 = float(score_dict_2[index][1])
-		except keyError:
+		except KeyError:
 			continue
 
 		# Determine type and strength of interaction
 		if score_1 < 0 or score_2 < 0:
-			temp_score_1 = 2^abs(score_1)
-			temp_score_2 = 2^abs(score_2)
+			temp_score_1 = 2**abs(score_1)
+			temp_score_2 = 2**abs(score_2)
 			ratio = min([(temp_score_1 / temp_score_2), (temp_score_2 / temp_score_1)])
-			magnitude = (2^abs(score_1)) + (2^abs(score_2))
+			magnitude = (2**abs(score_1)) + (2**abs(score_2))
 			interaction = -numpy.log2(ratio * magnitude)
 		else:
 			temp_score_1 = score_1
 			temp_score_2 = score_2
 			ratio = min([(temp_score_1 / temp_score_2), (temp_score_2 / temp_score_1)])
-			magnitude = (2^score_1) + (2^score_2)
+			magnitude = (2**score_1) + (2**score_2)
 			interaction = numpy.log2(ratio * magnitude)
 
 		interaction_dictionary[index] = [name, score_1, score_2, ratio, magnitude, interaction]
@@ -150,93 +146,94 @@ def community_demand(community_dict, member_dict):
 	for compound in member_dict.keys():
 		name = member_dict[compound][0]
 		score = member_dict[compound][1]
-
+		
 		if score < 0:
-			score = -(2^abs(score))
+			score = -(2**abs(score))
 		else:
-			score = 2^abs(score)
+			score = 2**abs(score)
 	
 		try:
-			cumulative_score = community_dict[compound][2] + score
+			cumulative_score = community_dict[compound][1] + score
 			if score > 0:
-				production = community_dict[compound][3] + score
-				consumption = community_dict[compound][4]
-			elif score < 0:
-				consumption = community_dict[compound][4] + score
+				consumption = community_dict[compound][2] + score
 				production = community_dict[compound][3]
-			community_dict[compound] = [name, cumulative_score, production, consumption]
-		except keyError:
-			if score > 0:
-				production = score
-				consumption = 0
 			elif score < 0:
-				production = 0
+				production = community_dict[compound][3] + score
+				consumption = community_dict[compound][2]
+			community_dict[compound] = [name, cumulative_score, consumption, production]
+		except KeyError:
+			if score > 0:
 				consumption = score
-			community_dict[compound] = [name, score, production, consumption]
+				production = 0
+			elif score < 0:
+				consumption = 0
+				production = score
+			community_dict[compound] = [name, score, consumption, production]
 
 	return community_dict
 
 
 # Calculates the percentile for the given type of score
-def calc_percentile(dictionary, type_index):
+def calc_percentile(output_dictionary, type_index):
 
-	all_values = []
-	for index in dictionary.keys():
-		all_values.append(dictionary[index][type_index])
+	current_list = []
+	for index in output_dictionary.keys():
+		current_list.append(output_dictionary[index][type_index])
 
-	per_90 = [numpy.percentile(current_list, 90), numpy.percentile(current_list, 10)]
-	per_80 = [numpy.percentile(current_list, 80), numpy.percentile(current_list, 20)]
-	per_70 = [numpy.percentile(current_list, 70), numpy.percentile(current_list, 30)]
-	per_60 = [numpy.percentile(current_list, 60), numpy.percentile(current_list, 40)]
+	per_90 = [numpy.percentile(current_list, 10), numpy.percentile(current_list, 90)]
+	per_80 = [numpy.percentile(current_list, 20), numpy.percentile(current_list, 80)]
+	per_70 = [numpy.percentile(current_list, 30), numpy.percentile(current_list, 70)]
+	per_60 = [numpy.percentile(current_list, 40), numpy.percentile(current_list, 60)]
 
-	for index in dictionary.keys():
-		if dictionary[index][type_index] < per_90[0] or dictionary[index][type_index] > per_90[1]:
-			dictionary[index] = dictionary[index].append('90th')
+	for index in output_dictionary.keys():
+		if output_dictionary[index][type_index] < per_90[0] or output_dictionary[index][type_index] > per_90[1]:
+			output_dictionary[index] = output_dictionary[index] + ['90']
 			continue
-		elif dictionary[index][type_index] < per_80[0] or dictionary[index][type_index] > per_80[1]:
-			dictionary[index] = dictionary[index].append('80th')
+		elif output_dictionary[index][type_index] < per_80[0] or output_dictionary[index][type_index] > per_80[1]:
+			output_dictionary[index] = output_dictionary[index] + ['80']
 			continue
-		elif dictionary[index][type_index] < per_70[0] or dictionary[index][type_index] > per_70[1]:
-			dictionary[index] = dictionary[index].append('70th')
+		elif output_dictionary[index][type_index] < per_70[0] or output_dictionary[index][type_index] > per_70[1]:
+			output_dictionary[index] = output_dictionary[index] + ['70']
 			continue
-		elif dictionary[index][type_index] < per_60[0] or dictionary[index][type_index] > per_60[1]:
-			dictionary[index] = dictionary[index].append('60th')
+		elif output_dictionary[index][type_index] < per_60[0] or output_dictionary[index][type_index] > per_60[1]:
+			output_dictionary[index] = output_dictionary[index] + ['60']
 			continue
 		else:
-			dictionary[index] = dictionary[index].append('none')
+			output_dictionary[index] = output_dictionary[index] + ['50']
 
-	return dictionary
+	return output_dictionary
 
 
 # Function to write data to output file
-def write_output(header, dictionary, file_name, type_output):
+def write_output(header, output_dictionary, file_name, type_output):
 
 	with open(file_name, 'w') as outfile:
 		outfile.write(header)
 		
 		if type_output == 'single':
 
-			for index in dictionary.keys():
-			
-				name = dictionary[index][0]
-				score_1 = dictionary[index][1]
-				score_2 = dictionary[index][2]
-				ratio = dictionary[index][3]
-				magnitude = dictionary[index][4]
-				percentile = dictionary[index][5]
+			for index in output_dictionary.keys():
+				
+				name = output_dictionary[index][0]
+				score_1 = output_dictionary[index][1]
+				score_2 = output_dictionary[index][2]
+				ratio = output_dictionary[index][3]
+				magnitude = output_dictionary[index][4]
+				interaction = output_dictionary[index][5]
+				percentile = output_dictionary[index][6]
 
-				entry = '\t'.join([index, name, str(score_1), str(score_2), str(ratio), str(magnitude), percentile]) + '\n'
+				entry = '\t'.join([str(index), str(name), str(score_1), str(score_2), str(round(float(ratio), 3)), str(round(float(magnitude), 3)), str(round(float(percentile), 3))]) + '\n'
 				outfile.write(entry)
 
 		elif type_output == 'community':
 
-			for index in dictionary.keys():
+			for index in output_dictionary.keys():
 			
-				name = dictionary[index][0]
-				score = dictionary[index][1]
-				production = dictionary[index][2]
-				consumption = dictionary[index][3]
-				percentile = dictionary[index][4]
+				name = output_dictionary[index][0]
+				score = output_dictionary[index][1]
+				consumption = output_dictionary[index][2]
+				production = output_dictionary[index][3]
+				percentile = output_dictionary[index][4]
 
 				# Transform scores back to log2
 				if score == 0.0:
@@ -246,35 +243,29 @@ def write_output(header, dictionary, file_name, type_output):
 				else:
 					score = numpy.log2((score))
 
-				if production == 0.0:
-					production = 0.0
-				else:
-					production = numpy.log2((production))
-
 				if consumption == 0.0:
 					consumption = 0.0
 				else:
-					consumption = numpy.log2((consumption)) * -1
+					consumption = numpy.log2(consumption)
 
-				entry = '\t'.join([index, name, str(score), str(production), str(consumption), percentile]) + '\n'
+				if production == 0.0:
+					production = 0.0
+				else:
+					production = numpy.log2(abs(production)) * -1
+
+				entry = '\t'.join([str(index), str(name), str(score), str(round(float(consumption), 3)), str(round(float(production), 3)), str(round(float(percentile), 3))]) + '\n'
 				outfile.write(entry)
 
-
-#---------------------------------------------------------------------------------------#
-
-
-# Create a new directory for community interaction files
-directory = str(os.getcwd()) + '/community.files'
-if not os.path.exists(directory):	
-	os.makedirs(directory)
-os.chdir(directory)
 
 #---------------------------------------------------------------------------------------#
 
 # Worflow
 
 # Retrieve and read in the necessary files
+interactions = open(interactions, 'r')
 interactions_list = read_files(interactions)
+if not os.path.exists('community.files'):	
+	os.makedirs('community.files')
 community_dictionary = {}
 community = []
 current = 0
@@ -299,13 +290,13 @@ for index in interactions_list:
 		community_dictionary = community_demand(community_dictionary, scores_2)
 		community.append(str(index[1]))
 
-	header = 'Compound_code\tCompound_name\tScore_1\tScore_2\tRatio\tMagnitude\tPercentile\n'
-	file_name = str(index[0]) + '.and.' + str(index[1]) + '.interaction.txt'
+	header = 'compound_code\tcompound_name\tscore_1\tscore_2\tratio\tmagnitude\tinteraction_score\tpercentile\n'
+	file_name = str('community.files/' + index[0]) + '.and.' + str(index[1]) + '.interaction.txt'
 	write_output(header, interaction, file_name, 'single')
 
 # Write cumulative scores to a file
-community = calc_percentile(community, 1)
-header = 'Compound_code\tCompound_name\tCumulative_Metabolite_Score\tProduction_Score\tConsumption_score\tPercentile\n'
-file_name = 'community_importance.tsv'
-write_output(header, community, file_name, 'community')
+community_dictionary = calc_percentile(community_dictionary, 1)
+header = 'compound_code\tcompound_name\tcumulative_metabolite_score\tconsumption_score\tproduction_score\tpercentile\n'
+file_name = 'community.files/community_importance.tsv'
+write_output(header, community_dictionary, file_name, 'community')
 print('Done\n')
