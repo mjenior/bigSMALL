@@ -222,7 +222,7 @@ def write_output(header, output_dictionary, file_name, type_output):
 				interaction = output_dictionary[index][5]
 				percentile = output_dictionary[index][6]
 
-				entry = '\t'.join([str(index), str(name), str(score_1), str(score_2), str(round(float(ratio), 3)), str(round(float(magnitude), 3)), str(round(float(percentile), 3))]) + '\n'
+				entry = '\t'.join([str(index), str(name), str(score_1), str(score_2), str(round(float(ratio), 3)), str(round(float(magnitude), 3)), str(round(float(interaction), 3)), str(round(float(percentile), 3))]) + '\n'
 				outfile.write(entry)
 
 		elif type_output == 'community':
@@ -290,7 +290,9 @@ for index in interactions_list:
 		community_dictionary = community_demand(community_dictionary, scores_2)
 		community.append(str(index[1]))
 
-	header = 'compound_code\tcompound_name\tscore_1\tscore_2\tratio\tmagnitude\tinteraction_score\tpercentile\n'
+	org_name1 = str(index[0]).split('.')[0]
+	org_name2 = str(index[1]).split('.')[0]
+	header = 'compound_code\tcompound_name\t' + org_name1 + '_score\t' + org_name2 + '_score\tratio\tmagnitude\tinteraction_score\tpercentile\n'
 	file_name = str('community.files/' + index[0]) + '.and.' + str(index[1]) + '.interaction.txt'
 	write_output(header, interaction, file_name, 'single')
 
