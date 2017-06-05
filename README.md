@@ -62,24 +62,28 @@ expression_file - two column file of KEGG ID and transcript abundance
 
 #---------------------------------------------------------------------------#
 
-##COMING SOON
 
-# interactions.py
-Calculate metabolic pair-wise interactions of species from the output of bigSMALL.
+# crosstalk.py
+Multi-level inference of substrate competition and cooperation between transcriptome-informed genome-scale models
+
+Calculates putative community-level and pair-wise metabolic interactions between species from aggregated bigSMALL analysis
+
 
 # Basic usage:
-python interactions.py [-h] bigSMALL_interactors [--p_value P_VALUE]
+python crosstalk.py [-h] bigSMALL_interactors [--p_value P_VALUE]
 
 # Options:
 **Positional, required argument:**
 
-bigSMALL_interactors       2 column file of species interactors with bigSMALL output for each (directories)
+bigSMALL_interactors       1 column file of species with bigSMALL output for each (directories)
 
 **Optional arguments:**
 
   -h, --help     show this help message and exit
 
-  --p_value      Minimum p-value for metabolites to be considered in calculations
+  --p      Minimum p-value for metabolites to be considered in calculations
+  
+  --norm	Option to normalize scores from each metabolic network based on their individual sequencing coverage
 
 
 #---------------------------------------------------------------------------#
