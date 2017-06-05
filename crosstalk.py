@@ -297,7 +297,7 @@ for index in interactions_list:
 	org_name1 = str(index[0]).split('.')[0]
 	org_name2 = str(index[1]).split('.')[0]
 	header = 'compound_code\tcompound_name\t' + org_name1 + '_score\t' + org_name2 + '_score\tratio\tmagnitude\tinteraction_score\tpercentile\n'
-	file_name = str('community.files/' + index[0]) + '.and.' + str(index[1]) + '.interaction.txt'
+	file_name = str('community.files/' + index[0]) + '.and.' + str(index[1]) + '.interaction.tsv'
 	write_output(header, interaction, file_name, 'single')
 
 # Write cumulative scores to a file
