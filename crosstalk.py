@@ -122,7 +122,11 @@ def single_interaction(score_dict_1, score_dict_2):
 			continue
 
 		# Determine type and strength of interaction
-		if score_1 < 0 or score_2 < 0:
+		if score_1 < 0 and score_2 < 0:
+			ratio = 0.0
+			magnitude = 0.0
+			interaction = 0.0
+		elif score_1 < 0 or score_2 < 0:
 			temp_score_1 = 2**abs(score_1)
 			temp_score_2 = 2**abs(score_2)
 			ratio = min([(temp_score_1 / temp_score_2), (temp_score_2 / temp_score_1)])
