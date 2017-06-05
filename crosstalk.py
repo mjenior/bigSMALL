@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-'''USAGE: python python competition.py interaction.files --p n.s. --abund TRUE
-Multi-level inference of substrate competition between transcriptome-informed genome-scale models
+'''USAGE: python crosstalk.py interaction.files --p n.s. --norm n
+Multi-level inference of substrate competition and cooperation between transcriptome-informed genome-scale models
 Calculates putative community-level and pair-wise metabolic interations between species from aggregated bigSMALL analysis
 '''
 
@@ -21,18 +21,20 @@ starting_directory = str(os.getcwd())
 #---------------------------------------------------------------------------------------#
 
 # Set up arguments
-parser = argparse.ArgumentParser(description='Calculate metabolic pair-wise interactions of species from the output of bigSMALL.')
+parser = argparse.ArgumentParser(description='Calculate metabolic pair-wise and community-level interactions of species from the output of bigSMALL.')
 parser.add_argument('input_file')
 parser.add_argument('--p', default='n.s.', help='Minimum p-value for metabolites to be considered in calculations')
-parser.add_argument('--str', default=0, help='Minimum strength of imputed nutrient competition which to report')
+parser.add_argument('--norm', default='n', help='Normalize each metabolic model to total transcript recruited to each (y or n)')
 
 args = parser.parse_args()
 interactions = args.input_file
 p_value = args.p
-strength = args.str
+normalize = args.norm
 
 if os.stat(interactions).st_size == 0 : sys.exit('WARNING: Input file empty, quitting')
 if p_value != 'n.s.' and p_value < 0.0: sys.exit('WARNING: Invalid p-value cutoff, quitting')
+if normalize != 'n' or normalize != 'y': sys.exit('WARNING: Invalid normalization response, quitting')
+
 print('\n')
 
 #---------------------------------------------------------------------------------------#
@@ -66,7 +68,7 @@ def read_files(files):
 
 
 # Reads importance files, applying p-value filter, normalizes score to reads, and generates a dictionary for compound names and compound scores
-def read_scores(importance_scores, p_cutoff):
+def read_scores(importance_scores, p_cutoff, norm):
 
 	score_dictionary = {}
 	name_dictionary = {}
@@ -80,10 +82,7 @@ def read_scores(importance_scores, p_cutoff):
 		compound_name = str(line[1])
 		
 		score = float(line[2])
-		if score =< 0.0:
-			continue
-		else:
-			score = 2 ^ score
+		if score == 0.0: continue
 		
 		p_value = str(line[3]).lstrip('<')
 		if p_value == 'n.s.': p_value = 1
@@ -93,17 +92,22 @@ def read_scores(importance_scores, p_cutoff):
 		score_dictionary[compound_code] = score
 		name_dictionary[compound_code] = compound_name	
 
-	final_score_dictionary = {}
-	score_sum = sum([abs(x) for x in score_dictionary.values()])
-	for index in score_dictionary.keys()
-		final_score = score_dictionary[index] / score_sum
-		final_score_dictionary[index] = [name_dictionary[index], final_score]
+	if norm == 'y':
+		final_score_dictionary = {}
+		score_sum = sum([abs(x) for x in score_dictionary.values()])
+		for index in score_dictionary.keys()
+			final_score = score_dictionary[index] / score_sum
+			final_score_dictionary[index] = [compound_name, final_score]
+	else:
+		final_score_dictionary = {}
+		for index in score_dictionary.keys()
+			final_score_dictionary[index] = [compound_name, score_dictionary[index]]
 
 	return final_score_dictionary
 
 
 # Function for calculating edges of metabolic competition
-def single_interaction(score_dict_1, score_dict_2, min_strength):
+def single_interaction(score_dict_1, score_dict_2):
 	
 	all_compounds = list(set(score_dict_1.keys() + score_dict_2.keys()))
 	
@@ -121,51 +125,54 @@ def single_interaction(score_dict_1, score_dict_2, min_strength):
 		except keyError:
 			continue
 
-		# Determine strength of competition
-		magnitude = score_1 + score_2
-		difference = abs(score_1 - score_2)
-
-		if magnitude > 500:
-			if difference <= 50:
-				strength = 'very strong'
-			elif difference <= 175:
-				strength = 'strong'	
-			elif difference <= 300:
-				strength = 'moderate'
-			else:
-				strength = 'weak'
-		elif magnitude >= 250:
-			if difference <= 70:
-				strength = 'strong'
-			if difference <= 150:
-				strength = 'moderate'
-			else:
-				strength = 'weak'
-		elif magnitude >= 125:
-			if difference <= 90:
-				strength = 'moderate'
-			else:
-				strength = 'weak'
+		# Determine type and strength of interaction
+		if score_1 < 0 or score_2 < 0:
+			temp_score_1 = 2^abs(score_1)
+			temp_score_2 = 2^abs(score_2)
+			ratio = min([(temp_score_1 / temp_score_2), (temp_score_2 / temp_score_1)])
+			magnitude = (2^abs(score_1)) + (2^abs(score_2))
+			interaction = -numpy.log2(ratio * magnitude)
 		else:
-			strength = 'none'
+			temp_score_1 = score_1
+			temp_score_2 = score_2
+			ratio = min([(temp_score_1 / temp_score_2), (temp_score_2 / temp_score_1)])
+			magnitude = (2^score_1) + (2^score_2)
+			interaction = numpy.log2(ratio * magnitude)
 
-		interaction_dictionary[index] = [name, score_1, score_2, magnitude, difference, strength]
+		interaction_dictionary[index] = [name, score_1, score_2, ratio, magnitude, interaction]
 
 	return interaction_dictionary
 
 
 # Calculate cumulative importance of each compound across the groups of models tested
-def community_interaction(community_dict, member_dict):
+def community_demand(community_dict, member_dict):
 
 	for compound in member_dict.keys():
 		name = member_dict[compound][0]
 		score = member_dict[compound][1]
+
+		if score < 0:
+			score = -(2^abs(score))
+		else:
+			score = 2^abs(score)
 	
 		try:
 			cumulative_score = community_dict[compound][2] + score
-			community_dict[compound] = [name, cumulative_score]
+			if score > 0:
+				production = community_dict[compound][3] + score
+				consumption = community_dict[compound][4]
+			elif score < 0:
+				consumption = community_dict[compound][4] + score
+				production = community_dict[compound][3]
+			community_dict[compound] = [name, cumulative_score, production, consumption]
 		except keyError:
-			community_dict[compound] = [name, score]
+			if score > 0:
+				production = score
+				consumption = 0
+			elif score < 0:
+				production = 0
+				consumption = score
+			community_dict[compound] = [name, score, production, consumption]
 
 	return community_dict
 
@@ -214,25 +221,11 @@ def write_output(header, dictionary, file_name, type_output):
 				name = dictionary[index][0]
 				score_1 = dictionary[index][1]
 				score_2 = dictionary[index][2]
-				magnitude = dictionary[index][3]
-				strength = dictionary[index][4]
+				ratio = dictionary[index][3]
+				magnitude = dictionary[index][4]
 				percentile = dictionary[index][5]
 
-				# Transform scores back to log2
-				if score_1 == 0.0:
-					score_1 = 0.0
-				elif score_1 < 0.0:
-					score_1 = numpy.log2(abs(score_1)) * -1
-				else:
-					score_1 = numpy.log2((score_1))
-				if score_2 == 0.0:
-					score_2 = 0.0
-				elif score_2 < 0.0:
-					score_2 = numpy.log2(abs(score_2)) * -1
-				else:
-					score_2 = numpy.log2((score_2))
-
-				entry = '\t'.join([index, name, str(score_1), str(score_2), str(magnitude), strength, percentile]) + '\n'
+				entry = '\t'.join([index, name, str(score_1), str(score_2), str(ratio), str(magnitude), percentile]) + '\n'
 				outfile.write(entry)
 
 		elif type_output == 'community':
@@ -241,8 +234,9 @@ def write_output(header, dictionary, file_name, type_output):
 			
 				name = dictionary[index][0]
 				score = dictionary[index][1]
-				magnitude = dictionary[index][2]
-				percentile = dictionary[index][3]
+				production = dictionary[index][2]
+				consumption = dictionary[index][3]
+				percentile = dictionary[index][4]
 
 				# Transform scores back to log2
 				if score == 0.0:
@@ -252,7 +246,17 @@ def write_output(header, dictionary, file_name, type_output):
 				else:
 					score = numpy.log2((score))
 
-				entry = '\t'.join([index, name, str(score), percentile]) + '\n'
+				if production == 0.0:
+					production = 0.0
+				else:
+					production = numpy.log2((production))
+
+				if consumption == 0.0:
+					consumption = 0.0
+				else:
+					consumption = numpy.log2((consumption)) * -1
+
+				entry = '\t'.join([index, name, str(score), str(production), str(consumption), percentile]) + '\n'
 				outfile.write(entry)
 
 
@@ -277,31 +281,31 @@ current = 0
 for index in interactions_list:
 
 	os.chdir(index[0])
-	scores_1 = read_scores(open('importances.tsv','r'), p_value)
+	scores_1 = read_scores(open('importances.tsv','r'), p_value, normalize)
 	os.chdir(starting_directory)
 	os.chdir(index[1])
-	scores_2 = read_scores(open('importances.tsv','r'), p_value)
+	scores_2 = read_scores(open('importances.tsv','r'), p_value, normalize)
 	os.chdir(starting_directory)
 
 	current += 1
 	print('Calculating interaction ' + str(current) + ' of ' + str(len(interactions_list)) + '.')
 	interaction = single_interaction(scores_1, scores_2)
-	interaction = calc_percentile(interaction, 3)
+	interaction = calc_percentile(interaction, 5)
 
 	if not str(index[0]) in community:
-		community_dictionary = community_interaction(community_dictionary, scores_1)
+		community_dictionary = community_demand(community_dictionary, scores_1)
 		community.append(str(index[0]))
 	if not str(index[1]) in community:
-		community_dictionary = community_interaction(community_dictionary, scores_2)
+		community_dictionary = community_demand(community_dictionary, scores_2)
 		community.append(str(index[1]))
 
-	header = 'Compound_code\tCompound_name\tScore_1\tScore_2\tMagnitude\tPercentile\n'
+	header = 'Compound_code\tCompound_name\tScore_1\tScore_2\tRatio\tMagnitude\tPercentile\n'
 	file_name = str(index[0]) + '.and.' + str(index[1]) + '.interaction.txt'
 	write_output(header, interaction, file_name, 'single')
 
 # Write cumulative scores to a file
 community = calc_percentile(community, 1)
-header = 'Compound_code\tCompound_name\tCommunity_Metabolite_Score\tPercentile\n'
+header = 'Compound_code\tCompound_name\tCumulative_Metabolite_Score\tProduction_Score\tConsumption_score\tPercentile\n'
 file_name = 'community_importance.tsv'
 write_output(header, community, file_name, 'community')
 print('Done\n')
