@@ -257,7 +257,7 @@ def write_output(header, output_dictionary, file_name, type_output):
 				else:
 					production = numpy.log2(abs(production)) * -1
 
-				entry = '\t'.join([str(index), str(name), str(score), str(round(float(consumption), 3)), str(round(float(production), 3)), str(round(float(percentile), 3))]) + '\n'
+				entry = '\t'.join([str(index), str(name), str(round(float(score), 3)), str(round(float(consumption), 3)), str(round(float(production), 3)), str(round(float(percentile), 3))]) + '\n'
 				outfile.write(entry)
 
 
