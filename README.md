@@ -97,9 +97,9 @@ ko_expression.tsv - list of KO codes and corresponding expression values for Clo
  
 ko_expression.bipartite.files - Output of bipartite_graph.py for Clostridium difficile 630 during a mouse infection
 
-interactions.files - 
+interactions.files - Text file that lists the memebrs of the community you wish to model metabolic interaction and have bigSMALL output directories
 
-output from interactions.py...
+community.files - Output directory of all pair-wise comparisons of species in the community analyzed as well as overall metrics of community demand for metabolites
 
 
 #---------------------------------------------------------------------------#
