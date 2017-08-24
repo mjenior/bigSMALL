@@ -525,8 +525,7 @@ mljenior@umich.edu
 
 When using, please cite:
 Jenior ML, Leslie JL, Young VB, & Schloss PD. (2017). Clostridium difficile colonizes alternative 
-	nutrient niches during infection across distinct murine gut communities. 
-	Biorxiv preprint: http://biorxiv.org/content/early/2016/12/07/092304
+	nutrient niches during infection across distinct murine gut microbiomes. mSystems. 2 (4); e00063-17.
 
 Distributed under the GNU General Public License\n\n'''
 
