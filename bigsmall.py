@@ -62,7 +62,7 @@ iterations = int(args.iters)
 
 #---------------------------------------------------------------------------------------#			
 
-# Check if the user fucked it up
+# Check for input errors
 if KO_input_file == 'input_file':
 	print('No KO+expression file provided. Aborting.')
 	sys.exit()
